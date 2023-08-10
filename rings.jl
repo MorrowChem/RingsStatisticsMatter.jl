@@ -289,6 +289,6 @@ println("Number of rings elimated (even, odd): $(ngf[1]), $(ngf[2])")
 
 println("Ring statistics: \n")
 sf = [i for i in range(1,length(ringstat))]
-println(Int(ringstat) ./ sf)
+println(ringstat ./ sf)
 
 
