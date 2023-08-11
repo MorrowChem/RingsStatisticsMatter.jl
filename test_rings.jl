@@ -21,6 +21,6 @@ end
 close(file)
 
 
-@show nodlnkd[1:3][:]
-
-rs = rings.ring_statistics(4096, nodlnkd, [3920, 206, 1958, 2368, 1206])
+# rs = rings.ring_statistics(4096, nodlnkd, [3920, 206, 1958, 2368, 1206])
+@time rs = rings.ring_statistics_parallel(100000, nodlnkd, [98478, 146, 88735, 97356, 43748])
+# @time rs = rings.ring_statistics_parallel(4096, nodlnkd, [3920, 206, 1958, 2368, 1206])
