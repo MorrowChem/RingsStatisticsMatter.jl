@@ -7,7 +7,7 @@ Designed for large structural models, this can handle 100,000-atom models in und
 
 This package implements an algorithm based on the work described in:
 
-`Yuan, X. & Cormack, A. N. <https://doi.org/10.1016/S0927-0256(01)00256-7>`_.  
+`Yuan, X. & Cormack, A. N. <https://doi.org/10.1016/S0927-0256(01)00256-7>`_.   
 "Efficient Algorithm for Primitive Ring Statistics in Topological Networks."  
 Computational Materials Science, vol. 24, pp. 343-360, 2002.
 
