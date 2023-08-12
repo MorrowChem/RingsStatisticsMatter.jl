@@ -2,6 +2,9 @@ import numpy as np
 
 
 def halton_sequence(dim, num_points, ats):
+    """Places refnode points quasi-evenly spaced in non-special places
+    based on volume heuristic"""
+    
     vol = ats.get_volume()
     def halton_base_seq(base):
         seq = []
