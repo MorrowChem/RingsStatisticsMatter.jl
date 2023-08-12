@@ -1,5 +1,5 @@
 import argparse
-from rings import ring_statistics
+from julia_rings.rings import ring_statistics
 from ase.io import read
 
 parser = argparse.ArgumentParser(description="Ring Statistics Script")
