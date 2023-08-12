@@ -1,7 +1,17 @@
 julia_rings
 ===========
 
-This package provides tools for analyzing rings in molecular structures using Julia and Python.
+This package provides a tool for finding primitive rings efficiently for large models amorphous materials.
+
+Designed for large structural models, this can handle 100,000-atom models in under 10 minutes multithreaded on a 16GB M2 Mac laptop.
+
+This package implements an algorithm based on the work described in:
+
+Yuan, X. & Cormack, A. N.
+    "Efficient Algorithm for Primitive Ring Statistics in Topological Networks."
+    Computational Materials Science, vol. 24, pp. 343-360, 2002.
+
+`Read the paper here <https://doi.org/10.1016/S0927-0256(01)00256-7>`_.
 
 Dependencies
 ------------
@@ -35,7 +45,7 @@ Run the provided Python script to analyze rings in molecular structures:
 
 .. code-block:: bash
 
-   python run_rings.py structures/aSi_500atom_test.xyz
+   export JULIA_NUM_THREADS=2 && python run_rings.py structures/aSi_500atom_test.xyz
 
 Supported Platforms
 -------------------
