@@ -1,10 +1,19 @@
 
 module rings
 
-    using PyCall, JSON
+    """
+    Implementation of algorithm described in:
+    
+    Yuan, X. & Cormack, A. N. 
+    "Efficient Algorithm for Primitive Ring Statistics in Topological Networks." 
+    Computational Materials Science, vol. 24, pp. 343-360, 2002.
+    """
+
+    using PyCall, JSON, Formatting
     export ring_statistics
 
     function read_nodlnkd(filename)
+        """Helper for reading neighbourlist from a .csv file"""
         file = open(filename, "r")
         nodlnkd = Vector{Vector{Int64}}()
     
@@ -19,8 +28,23 @@ module rings
         return nodlnkd
     end
 
+
     function dijkstra_nonwgt(nodsrc::Int64, lvlreq::Int64, lnks, nodlnkd)
+        """
+        Perform Dijkstra's algorithm for non-weighted graphs to calculate shortest distances.
+
+        # Arguments
+        - `nodsrc::Int64`: Source node index.
+        - `lvlreq::Int64`: Required level of distances.
+        - `lnks`: Array of integers representing the number of links for each node.
+        - `nodlnkd`: Array of arrays representing the linked nodes for each node.
         
+        # Returns
+        - `lvldist::Vector{Int64}`: Array of shortest distances from the source node.
+        
+        This function performs Dijkstra's algorithm on a non-weighted graph to calculate the shortest distances from a specified source node to all other nodes. The algorithm considers the required level of distances (`lvlreq`) and returns an array of shortest distances.
+        """
+
         # initialise
         lvldist = lvlreq + 2 .+ zeros(Int64, length(lnks))
         lvldist[nodsrc] = 0
@@ -54,7 +78,27 @@ module rings
     function strpth_record(nodcrt::Int64, lvlcrt::Int64, lvlprim::Int64, 
                            pths::Int64, strpth, strpthx,
                            lvldist, lnks, nodlnkd)
+        """
+        Record shortest paths recursively from a current node to a set of prime nodes.
 
+        # Arguments
+        - `nodcrt::Int64`: Current node index.
+        - `lvlcrt::Int64`: Dijkstra-level of the current node.
+        - `lvlprim::Int64`: Dijkstra-level of the prime nodes.
+        - `pths::Int64`: Number of paths recorded.
+        - `strpth`: Array storing recorded paths.
+        - `strpthx`: Auxiliary array for path recording.
+        - `lvldist`: Array of shortest distances for source node.
+        - `lnks`: Array of integers representing the number of links for each node.
+        - `nodlnkd`: Array of arrays representing the linked nodes for each node.
+
+        # Returns
+        - `pths::Int64`: Updated number of paths recorded.
+        - `strpth`: Updated array storing recorded paths.
+        - `strpthx`: Updated auxiliary array for path recording.
+
+        This function recursively records the shortest paths from a given current node to a set of prime nodes. The prime nodes are determined by the `lvlprim` parameter. The recorded paths are stored in the `strpth` array, and an auxiliary array `strpthx` is used for path recording. The function returns the updated number of recorded paths and arrays.
+        """
         for lnkscrt in 1:lnks[nodcrt]
             nodprb = nodlnkd[nodcrt][lnkscrt]
             lvlprb = lvldist[nodprb]
@@ -82,9 +126,34 @@ module rings
                         srtpth1, srtpth2, 
                         prime1::Int64, prime2::Int64, 
                         nodsrc::Int64, ngf, rings, maxlvl::Int64)
-        
-        # cond = (nodsrc == 28509 && prime1 == 39689)
-        cond = false
+        """
+        Decide if a proposed ring is a prime ring
+
+        Arguments:
+        - `iodd::Int64`: 1 for odd, 0 for even rings
+        - `lvlprim::Int64`: Dijkstra level of the prime-mid-node.
+        - `lnks`: array for the order of each node (i.e. number of bonds on each atom)
+        - `lvldist`: array of Dijkstra-levels for each node relative to current source
+        - `lvlref`: array of Dijkstra-levels for each node relative to reference nodes
+        - `ringstat`: Ring statistics array for updating, if prime ring found
+        - `nodlnkd`: neighbourlist for each node
+        - `querng`: Queue for rings to check in this run of prime_ring
+        - `srtpth1`: Shortest-distance path for prime-mid-node no. 1
+        - `srtpth2`: Shortest-distance path for prime-mid-node no. 2 (same as srtpth1 if even ring)
+        - `prime1::Int64`: Prime-mid-node 1 index
+        - `prime2::Int64`: Prime-mid-node 2 index (same as 1 if even)
+        - `nodsrc::Int64`: Current source node
+        - `ngf`: rejection count for odd and even for updating
+        - `rings`: lists of rings of each size for updating
+        - `maxlvl::Int64`: Max level for Dijkstra
+
+        Returns:
+        - A tuple `(ngf, rings, ringstat)`.
+        -- ngf - number of rejected rings (even, odd)
+        -- rings - set of size-separated rings found described by nodes
+        -- ringstat - counts of each ring, normalised by size of ring (each ring is found n times where n=ring_size)
+
+        """
         rngs = size(querng)[1]
 
         for irng in 1:rngs
@@ -103,26 +172,20 @@ module rings
                         if nodchk == 0
                             nodchk = prime1
                         end
+
                         limit = zeros(Int64, length(lvlref), 2)
                         lr = length(lvlref)
 
-                        limit[1:lr, 1] = [lvlref[i][nodmid] > maxlvl ? Int64(1e4) : lvlref[i][nodmid]+lvlprim-1 for i in 1:lr]
-                        if cond
-                            @show lvlprim
-                        end
-                        # limit[1:lr, 1] = [lvlref[i][nodmid]+lvlprim-1 for i in 1:lr]
-                        limit[1:lr, 2] = [lvlref[i][nodmid] > maxlvl ? Int64(-1e4) : lvlref[i][nodmid]-lvlprim+1 for i in 1:lr]
-                        # limit[1:lr, 2] = [lvlref[i][nodmid]-lvlprim+1 for i in 1:lr]
+                        limit[1:lr, 1] = [lvlref[i][nodmid] > maxlvl ?  10000 : lvlref[i][nodmid]+lvlprim-1 for i in 1:lr]
+                        limit[1:lr, 2] = [lvlref[i][nodmid] > maxlvl ? -10000 : lvlref[i][nodmid]-lvlprim+1 for i in 1:lr]
 
                         limit[lr, 1] = lvldist[nodmid] + lvlprim - 1
                         limit[lr, 2] = lvldist[nodmid] - lvlprim + 1
-                        if cond
-                            @show limit
-                        end
+
                         goal_found = false
                         goal_found = pair_search(nodchk, nodmid, limit,
                                                  goal_found, lvlref, lvldist,
-                                                 lnks, nodlnkd, maxlvl, cond)
+                                                 lnks, nodlnkd, maxlvl)
 
                         if goal_found
                             goal_found = false
@@ -159,16 +222,12 @@ module rings
                 else
                     primes = [prime1]
                 end
-                r = collect(Iterators.flatten(
+                r = collect(Iterators.flatten( # collect ring nodes for master list
                     [[nodsrc,],  
                     srtpth1[pth1, 1:Int64((rs-(2+iodd))/2)], 
                     primes, 
                     srtpth2[pth2, 1:Int64((rs-(2+iodd))/2)]]))
                 push!(rings[rs], r)
-                if cond
-                    println("ring added")
-                    @show r
-                end
             end 
         @label next_ring
         end
@@ -178,10 +237,25 @@ module rings
 
     function pair_search(nodcrt::Int64, nodgoal::Int64, limit,
                          goal_found::Bool, lvlref, lvldist,
-                         lnks, nodlnkd, maxlvl, cond=false)
-        # Input: goal_found, nodcrt, nodgoal, lnks(), lvldist(), nodlnkd(), lvlref(), limit()
-        # Output: goal_found
-        # Internal: lmtx()
+                         lnks, nodlnkd, maxlvl)
+        """
+        Recursively search for shorter paths between nodes, accelerated by referential distance maps
+            
+            Arguments:
+            - `nodcrt::Int64`: The current node being examined.
+            - `nodgoal::Int64`: The target node to be found.
+            - `limit`: A matrix of limits for level references and distances.
+            - `goal_found::Bool`: A boolean indicating whether the goal node has been found with a shorter path
+            - `lvlref`: Array of referential distance maps
+            - `lvldist`: Distances of each node to current source node
+            - `lnks`: Number of bonds at each node
+            - `nodlnkd`: neighbour list
+            - `maxlvl`: The maximum Dijkstra-level
+            
+            Returns:
+            - `goal_found::Bool`
+        """
+
         lr = length(lvlref)
         if nodcrt == nodgoal
             goal_found = true
@@ -193,27 +267,16 @@ module rings
 
             for iref in 1:lr-1
                 if lvlref[iref][nodprb] >= maxlvl
-                    # if cond
-                    #     println("Refnode too far away ", lvlref[iref][nodprb], maxlvl)
-                    #  end
                     continue
                 end
                 if ( lvlref[iref][nodprb] >= limit[iref, 1] || 
                     lvlref[iref][nodprb] <= limit[iref, 2] )
-                    if cond
-                        println("1st")
-                        @show nodcrt, nodgoal, nodprb, lvldist[nodprb], lvldist[nodcrt], lvlref[iref][nodprb], limit[iref, :]
-                    end
                     @goto next_search
                 end
             end
             
             if ( lvldist[nodprb] >= limit[lr, 1] || 
                 lvldist[nodprb] <= limit[lr, 2] )
-                if cond
-                    println("2nd")
-                    @show nodcrt, nodgoal, nodprb, lvldist[nodprb], lvldist[nodcrt]
-                end
                 @goto next_search
             end
             
@@ -223,44 +286,46 @@ module rings
                 lmtx[iref, 2] = limit[iref, 2] + 1
             end
 
-            if cond
-                println("deeper")
-            end
             goal_found = pair_search(nodprb, nodgoal, lmtx,
                                      goal_found, lvlref, lvldist,
-                                     lnks, nodlnkd, maxlvl, cond)
+                                     lnks, nodlnkd, maxlvl)
             
             if goal_found
-                if cond
-                    println("Goal found!")
-                end
                 return goal_found
             end
             @label next_search
         end
-    goal_found = false
+
     return goal_found
     end
-
 
     # Program itself - main function
     function ring_statistics_single(numatoms, nodlnkd, refnodes,
                                     maxlvl=12, mxpths=Int64(100),
                                     progress=true, nods=nothing,
                                     parallel=false)
-
+        """
+        Same as below, except
+        - `nods::Vector{Int64}=nothing`: Indices of atoms to be considered by a thread. If not provided, defaults to all atoms. 
+        """
+        
         if (nods == nothing)
             nods = collect(range(1,numatoms))
         end
 
         # fixed array initialisations
-        lnks = Int64[length(nodlnkd[m]) for m in 1:numatoms]
+        lnks = Int64[length(nodlnkd[m]) for m in 1:numatoms] # no. bonds at each atom
         ringstat = zeros(Float64, 2*maxlvl) # array for the ring stats
-        L = maxlvl
-        ngf = [0, 0]
+        ngf = [0, 0] # counts rejections
+        # list for ring node indices
         rings = [Vector{Vector{Int64}}() for i in range(1,2*maxlvl)]
 
-
+        if progress && Threads.threadid()==1
+            print("Progress: ")
+        end
+        
+        # referential distance maps using refnodes
+        lvlref = [dijkstra_nonwgt(i, maxlvl, lnks, nodlnkd) for i in refnodes]
         for (ct, nodsrc) in enumerate(nods)
             if progress && Threads.threadid()==1
                 if nodsrc % floor(length(nods)/20) == 0
@@ -270,21 +335,14 @@ module rings
                     end
                 end
             end
-            cond = false 
-            # cond = !(nodsrc == 28509)
-            if cond
-                continue
-            end
 
-            lvlref = [dijkstra_nonwgt(i, maxlvl, lnks, nodlnkd) for i in refnodes]
+            # dist
             lvldist = dijkstra_nonwgt(nodsrc, maxlvl, lnks, nodlnkd)
 
             # find all the prime-mid-nodes
-            primes = findall(x -> x<(L-maxlvl%2)/2 && x>=1, lvldist)
+            primes = findall(x -> x<(maxlvl-maxlvl%2)/2 && x>=1, lvldist)
             # check each prime-mid-node
             for prime in primes
-                # cond = (nodsrc == 28509 && prime in [39689])
-                cond = false
                 
 
                 # even ring case here
@@ -307,9 +365,6 @@ module rings
                             inter = intersect(strpth[pth1, :], strpth[pth2, :])
                             if inter in [[0], []]
                                 push!(querng, [pth1, pth2])
-                                if cond
-                                    println("pushing ", [prime, strpth[pth1, :], strpth[pth2, :], nodsrc])
-                                end
                             end
                         end
                     end
@@ -369,28 +424,45 @@ module rings
                                                           strpth2, prime1, prime2,
                                                           nodsrc, ngf, rings, maxlvl)
                     end
-
                 end
             end
         end
-
-        if !parallel
-            println("Number of rings elimated (even, odd): $(ngf[1]), $(ngf[2])")
-            println("Ring statistics: \n")
-            sf = [i for i in range(1,length(ringstat))]
-            println(ringstat ./ sf)
-            return ringstat ./ sf
-        else
-            return ringstat, ngf, rings
-        end
+        return ringstat, ngf, rings
     end
 
 
     function ring_statistics(numatoms, nodlnkd, refnodes,
-                             maxlvl=12, mxpths=Int64(100), progress=true,
+                             maxlvl=12, mxpths::Int64=100, progress=true,
                              rings_out=true, outfile="rings_out.json")
+        """
+        Compute ring statistics for a set of atoms.
+        
+        # Arguments
+        - `numatoms::Int`: Total number of atoms in the system.
+        - `nodlnkd::Vector{Vector{Int64}}`: A list of vectors, where `nodlnkd[i]` contains the indices of atoms bonded to atom `i`.
+        - `refnodes::Vector{Int64}`: Indices of reference atoms used for distance calculations.
+        - `maxlvl::Int=12`: Maximum depth-level from source and reference nodes for Dijkstra
+        - `mxpths::Int64=100`: Maximum number of shortest paths explored for each source - 100 is plenty for 100k of amorphous Si
+        - `progress::Bool=true`: Whether to display progress information.
+        - `parallel::Bool=false`: Whether to use parallel execution.
+        
+        # Returns
+        - `ringstat::Vector{Float64}`: Array for storing the ring statistics.
+        - `ngf::Vector{Int}`: Counts of rejections for even and odd rings respectively
+        - `rings::Vector{Vector{Vector{Int64}}}`: List of ring node indices, separated by ring size. Should be n duplicates per ring (discovered by considering each source)
+        
+        This function calculates ring statistics for a single set of atoms using Dijkstra's algorithm for distance calculations. It considers even and odd ring cases and returns statistics, rejection counts, and information about detected rings.
 
-        println("Running ring_statistics in parallel with $(Threads.nthreads()) threads")
+        Implementation of algorithm described in:
+        
+        Yuan, X. & Cormack, A. N. 
+        "Efficient Algorithm for Primitive Ring Statistics in Topological Networks." 
+        Computational Materials Science, vol. 24, pp. 343-360, 2002.
+        
+        """
+
+        println("Running ring_statistics with $(Threads.nthreads()) threads")
+
         nods = collect(range(1,numatoms))
         chunks = Iterators.partition(nods, length(nods) ÷ Threads.nthreads())
         
@@ -416,8 +488,8 @@ module rings
         ngf = sum(ngfs)
         sf = [i for i in range(1,length(rs_s[1]))]
 
-        for element in rs
-            if isa(element, Float64) && element != floor(element)
+        for element in rs ./ sf
+            if element != floor(element)
                 @warn "Non-integer found in ring stats. This means not
                 all rings or extraneous rings have been found. Please check
                 you have enough refnodes!" 
@@ -425,20 +497,28 @@ module rings
             end
         end
 
-        println("Number of rings elimated during search (even, odd): $(ngf[1]), $(ngf[2])")
-        println("$((ngf[1] + ngf[2])/(sum(rs) + ngf[1] + ngf[2]) * 100)% of total")
+        println("\nNumber of rings elimated during search (even, odd): $(ngf[1]), $(ngf[2]) ",
+            "$(round(
+                (ngf[1] + ngf[2])/( sum(rs)+ngf[1]+ngf[2] )*100,
+                sigdigits=4)
+                )% of total")
 
-        println("Ring statistics: ")
-        println(rs ./ sf)
+        println("Ring statistics:")
+        println("Ring Size | Count ")
+        println("----------|----------")
+        
+        for i in 1:length(rs)
+            printfmt("{:7d} | {:7.1f}\n", sf[i], (rs ./ sf)[i])
+            if rs[i] == 0 && rs[i+1] == 0 && rs[max(1, i-1)] == 0 && i > 6
+                break
+            end
+                
+        end
 
-        # Convert the data to JSON format
         json_data = JSON.json(rings)
-
-        # Open the file for writing
         file = open(outfile, "w")
 
         try
-            # Write JSON data to the file
             write(file, json_data)
         finally
             close(file)
