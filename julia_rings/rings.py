@@ -2,8 +2,9 @@ import numpy as np
 from ase.io import read, write
 from ase.neighborlist import NeighborList, NewPrimitiveNeighborList
 import json
+from os.path import abspath, dirname, join
 import julia
-from utilities import halton_sequence, place_points_in_cube
+from julia_rings.utilities import halton_sequence, place_points_in_cube
 
 # Initialize Julia
 # julia.install() # you may have to run this the first time
@@ -11,15 +12,15 @@ from utilities import halton_sequence, place_points_in_cube
 # Create a Julia instance
 jl = julia.Julia(compiled_modules=False)
 import julia.Main as Main
-Main.include("rings.jl")
+Main.include(join(abspath(dirname(__file__)), "rings.jl"))
 
 
-def ring_statistics(ats, refnodes='auto', index='-1'):
+def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85):
     
     if type(ats) == str:
         ats = read(ats, index=index)
 
-    nl = NeighborList(cutoffs=2.85, self_interaction=False, bothways=True,
+    nl = NeighborList(cutoffs=cutoff, self_interaction=False, bothways=True,
                   primitive=NewPrimitiveNeighborList)
     nl.update(ats)
     # + 1 for Julia indexing
