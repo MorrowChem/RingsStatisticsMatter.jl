@@ -300,7 +300,7 @@ module rings
     end
 
     # Program itself - main function
-    function ring_statistics_single(numatoms, nodlnkd, refnodes,
+    function ring_statistics_single(numatoms, nodlnkd, lvlref, lnks,
                                     maxlvl=12, mxpths=Int64(100),
                                     progress=true, nods=nothing,
                                     parallel=false)
@@ -314,7 +314,6 @@ module rings
         end
 
         # fixed array initialisations
-        lnks = Int64[length(nodlnkd[m]) for m in 1:numatoms] # no. bonds at each atom
         ringstat = zeros(Float64, 2*maxlvl) # array for the ring stats
         ngf = [0, 0] # counts rejections
         # list for ring node indices
@@ -324,8 +323,7 @@ module rings
             print("Progress: ")
         end
         
-        # referential distance maps using refnodes
-        lvlref = [dijkstra_nonwgt(i, maxlvl, lnks, nodlnkd) for i in refnodes]
+
         for (ct, nodsrc) in enumerate(nods)
             if progress && Threads.threadid()==1
                 if nodsrc % floor(length(nods)/20) == 0
@@ -465,9 +463,12 @@ module rings
 
         nods = collect(range(1,numatoms))
         chunks = Iterators.partition(nods, length(nods) ÷ Threads.nthreads())
-        
+        lnks = Int64[length(nodlnkd[m]) for m in 1:numatoms] # no. bonds at each atom
+        # referential distance maps using refnodes
+        lvlref = [dijkstra_nonwgt(i, maxlvl, lnks, nodlnkd) for i in refnodes]
+
         tasks = map(chunks) do chunk
-            Threads.@spawn ring_statistics_single(numatoms, nodlnkd, refnodes,
+            Threads.@spawn ring_statistics_single(numatoms, nodlnkd, lvlref, lnks,
                                                   maxlvl, mxpths, progress,
                                                   chunk, true)
         end
