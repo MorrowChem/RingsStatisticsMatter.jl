@@ -1,25 +1,39 @@
-julia_rings
+Julia Rings
 ===========
 
-This package provides a tool for finding primitive rings efficiently for large models amorphous materials.
+This package provides a tool for finding primitive rings efficiently for large models of amorphous materials.
 
-Designed for large structural models, this can handle 100,000-atom models in under 10 minutes multithreaded on a 16GB M2 Mac laptop.
+Designed for large structural models, this can handle 100,000-atoms in under 10 minutes multithreaded on a 16GB M2 Mac laptop.
 
 This package implements an algorithm based on the work described in:
 
-`Yuan, X. & Cormack, A. N. <https://doi.org/10.1016/S0927-0256(01)00256-7>`_.   
-"Efficient Algorithm for Primitive Ring Statistics in Topological Networks."  
-Computational Materials Science, vol. 24, pp. 343-360, 2002.
+| Yuan, X. & Cormack, A. N. 
+| `"Efficient Algorithm for Primitive Ring Statistics in Topological Networks." <https://doi.org/10.1016/S0927-0256(01)00256-7>`_.
+| Computational Materials Science, vol. **24**, pp. 343-360, 2002.  
 
 
 Dependencies
 ------------
 
-Before using this package, ensure you have the required Julia packages installed:
+Before using this package, ensure you have the required Julia packages installed. Python dependencies are handled by pip.    
 
-- PyCall
-- JSON
-- Formatting
+To install Julia, use your package manager (brew, apt etc.) or visit the downloads page: https://julialang.org/downloads/  
+
+**Open the Julia REPL:**
+
+.. code-block:: bash
+
+   julia
+
+**Install the packages:**
+
+.. code-block:: julia
+
+   using Pkg
+   Pkg.add("PyCall")
+   Pkg.add("JSON")
+   Pkg.add("Formatting")
+
 
 Installation
 ------------

@@ -8,9 +8,10 @@ setup(
     author_email='joe.morrow@queens.ox.ac.uk',
     license='BSD 2-clause',
     packages=['julia_rings'],
-    install_requires=['ase',
+    install_requires=[
+                      'ase',
                       'numpy',
-                      'julia'                    
+                      'julia',                
                       ],
 
     classifiers=[
