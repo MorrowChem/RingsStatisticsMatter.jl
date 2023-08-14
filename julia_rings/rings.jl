@@ -29,7 +29,7 @@ module rings
     end
 
 
-    function dijkstra_nonwgt(nodsrc::Int64, lvlreq::Int64, lnks, nodlnkd)
+    function dijkstra_nonwgt(nodsrc::Int64, lvlreq::Int64, lnks::Vector{Int64}, nodlnkd::Vector{Vector{Int64}})
         """
         Perform Dijkstra's algorithm for non-weighted graphs to calculate shortest distances.
 
@@ -44,13 +44,12 @@ module rings
         
         This function performs Dijkstra's algorithm on a non-weighted graph to calculate the shortest distances from a specified source node to all other nodes. The algorithm considers the required level of distances (`lvlreq`) and returns an array of shortest distances.
         """
-
         # initialise
         lvldist = lvlreq + 2 .+ zeros(Int64, length(lnks))
         lvldist[nodsrc] = 0
         quebgn = 0
         quend = 1
-        queue = zeros(Int64, length(lnks))
+        queue = Vector{Int64}(undef, length(lnks))
         queue[1] = nodsrc
 
         while quebgn < quend
@@ -77,7 +76,7 @@ module rings
 
     function strpth_record(nodcrt::Int64, lvlcrt::Int64, lvlprim::Int64, 
                            pths::Int64, strpth, strpthx,
-                           lvldist, lnks, nodlnkd)
+                           lvldist, lnks::Vector{Int64}, nodlnkd::Vector{Vector{Int64}})
         """
         Record shortest paths recursively from a current node to a set of prime nodes.
 
@@ -120,12 +119,22 @@ module rings
     end
 
 
-    function prime_ring(iodd::Int64, lvlprim::Int64, lnks, 
-                        lvldist, lvlref, ringstat, 
-                        nodlnkd, querng, 
-                        srtpth1, srtpth2, 
-                        prime1::Int64, prime2::Int64, 
-                        nodsrc::Int64, ngf, rings, maxlvl::Int64)
+    function prime_ring(iodd::Int64, 
+                        lvlprim::Int64, 
+                        lnks::Vector{Int64}, 
+                        lvldist::Vector{Int64}, 
+                        lvlref::Vector{Vector{Int64}},
+                        ringstat::Vector{Float64}, 
+                        nodlnkd::Vector{Vector{Int64}}, 
+                        querng::Vector{Vector{Int64}}, 
+                        srtpth1::Matrix{Int64},
+                        srtpth2::Matrix{Int64}, 
+                        prime1::Int64, 
+                        prime2::Int64, 
+                        nodsrc::Int64, 
+                        ngf::Vector{Int64}, 
+                        rings::Vector{Vector{Vector{Int64}}},
+                        maxlvl::Int64)
         """
         Decide if a proposed ring is a prime ring
 
@@ -155,7 +164,6 @@ module rings
 
         """
         rngs = size(querng)[1]
-
         for irng in 1:rngs
             pth1 = querng[irng][1]
             pth2 = querng[irng][2]
@@ -173,8 +181,9 @@ module rings
                             nodchk = prime1
                         end
 
-                        limit = zeros(Int64, length(lvlref), 2)
+                        
                         lr = length(lvlref)
+                        limit = Matrix{Int64}(undef, lr, 2)
 
                         limit[1:lr, 1] = [lvlref[i][nodmid] > maxlvl ?  10000 : lvlref[i][nodmid]+lvlprim-1 for i in 1:lr]
                         limit[1:lr, 2] = [lvlref[i][nodmid] > maxlvl ? -10000 : lvlref[i][nodmid]-lvlprim+1 for i in 1:lr]
@@ -235,9 +244,15 @@ module rings
     end
 
 
-    function pair_search(nodcrt::Int64, nodgoal::Int64, limit,
-                         goal_found::Bool, lvlref, lvldist,
-                         lnks, nodlnkd, maxlvl)
+    function pair_search(nodcrt::Int64,
+                         nodgoal::Int64,
+                         limit::Matrix{Int64},
+                         goal_found::Bool,
+                         lvlref::Vector{Vector{Int64}},
+                         lvldist::Vector{Int64},
+                         lnks::Vector{Int64},
+                         nodlnkd::Vector{Vector{Int64}},
+                         maxlvl::Int64)
         """
         Recursively search for shorter paths between nodes, accelerated by referential distance maps
             
@@ -280,8 +295,8 @@ module rings
                 @goto next_search
             end
             
-            lmtx = zeros(Int64, lr, 2)
-            for iref in 1:length(lvlref)
+            lmtx = Matrix{Int64}(undef, lr, 2)
+            for iref in 1:lr
                 lmtx[iref, 1] = limit[iref, 1] - 1
                 lmtx[iref, 2] = limit[iref, 2] + 1
             end
@@ -300,13 +315,18 @@ module rings
     end
 
     # Program itself - main function
-    function ring_statistics_single(numatoms, nodlnkd, lvlref, lnks,
-                                    maxlvl=12, mxpths=Int64(100),
-                                    progress=true, nods=nothing,
-                                    parallel=false)
+    function ring_statistics_single(numatoms::Int64,
+                                    nodlnkd::Vector{Vector{Int64}},
+                                    lvlref::Vector{Vector{Int64}},
+                                    lnks::Vector{Int64},
+                                    maxlvl::Int64=12,
+                                    mxpths::Int64=100,
+                                    progress::Bool=true,
+                                    nods=nothing,
+                                    parallel::Bool=false)
         """
         Same as below, except
-        - `nods::Vector{Int64}=nothing`: Indices of atoms to be considered by a thread. If not provided, defaults to all atoms. 
+        - `nods=nothing`: Indices of atoms to be considered by a thread. If not provided, defaults to all atoms. 
         """
         
         if (nods == nothing)
@@ -406,10 +426,8 @@ module rings
                         # check both sets of shortest paths for rings
                         for pth1 in 1:pths
                             for pth2 in 1:pths2
-                                p1 = collect(Iterators.flatten([[prime1], strpth[pth1, :]]))
-                                p2 = collect(Iterators.flatten([[prime2], strpth2[pth2, :]]))
-                                inter = intersect(p1, p2)
-                                if inter in [[0], []]
+                                inter = intersect([prime1; strpth[pth1, :]], [prime2; strpth2[pth2, :]])
+                                if length(inter) == 0 || (length(inter) == 1 && inter[1] == 0)
                                     push!(querng, [pth1, pth2])
                                 end
                             end
@@ -429,9 +447,14 @@ module rings
     end
 
 
-    function ring_statistics(numatoms, nodlnkd, refnodes,
-                             maxlvl=12, mxpths::Int64=100, progress=true,
-                             rings_out=true, outfile="rings_out.json")
+    function ring_statistics(numatoms::Int64,
+                             nodlnkd::Vector{Vector{Int64}},
+                             refnodes::Vector{Int64},
+                             maxlvl::Int64=12,
+                             mxpths::Int64=100,
+                             progress::Bool=true,
+                             rings_out::Bool=true,
+                             outfile::String="rings_out.json")
         """
         Compute ring statistics for a set of atoms.
         
@@ -468,9 +491,15 @@ module rings
         lvlref = [dijkstra_nonwgt(i, maxlvl, lnks, nodlnkd) for i in refnodes]
 
         tasks = map(chunks) do chunk
-            Threads.@spawn ring_statistics_single(numatoms, nodlnkd, lvlref, lnks,
-                                                  maxlvl, mxpths, progress,
-                                                  chunk, true)
+            Threads.@spawn ring_statistics_single(numatoms,
+                                                  nodlnkd,
+                                                  lvlref,
+                                                  lnks,
+                                                  maxlvl,
+                                                  mxpths,
+                                                  progress,
+                                                  chunk,
+                                                  true)
         end
 
         results = fetch.(tasks)
