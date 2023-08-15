@@ -447,6 +447,16 @@ module rings
     end
 
 
+    function process_refnodes_chunk(chunk, refnodes::Vector{Int64}, maxlvl::Int64,
+                                    lnks::Vector{Int64}, nodlnkd::Vector{Vector{Int64}})
+        lvlref_tmp = Vector{Int64}[]
+        for i in chunk
+            lvlref_i = dijkstra_nonwgt(refnodes[i], maxlvl, lnks, nodlnkd)
+            push!(lvlref_tmp, lvlref_i)
+        end
+        return lvlref_tmp
+    end
+
     function ring_statistics(numatoms::Int64,
                              nodlnkd::Vector{Vector{Int64}},
                              refnodes::Vector{Int64},
@@ -485,11 +495,23 @@ module rings
         println("Running ring_statistics with $(Threads.nthreads()) threads")
 
         nods = collect(range(1,numatoms))
-        chunks = Iterators.partition(nods, length(nods) ÷ Threads.nthreads())
         lnks = Int64[length(nodlnkd[m]) for m in 1:numatoms] # no. bonds at each atom
+        
+        
         # referential distance maps using refnodes
-        lvlref = [dijkstra_nonwgt(i, maxlvl, lnks, nodlnkd) for i in refnodes]
+        print("Calculating referential distance maps...")
+        refnode_chunks = Iterators.partition([i for i in 1:length(refnodes)],
+                                      length(refnodes) ÷ Threads.nthreads())
 
+
+        refnode_tasks = map(refnode_chunks) do chunk
+            Threads.@spawn process_refnodes_chunk(chunk, refnodes, maxlvl, lnks, nodlnkd)
+        end
+        refnode_results = fetch.(refnode_tasks)
+        lvlref = vcat(refnode_results...)
+        print("done\nStarting ring statistics...\n")
+    
+        chunks = Iterators.partition(nods, length(nods) ÷ Threads.nthreads())
         tasks = map(chunks) do chunk
             Threads.@spawn ring_statistics_single(numatoms,
                                                   nodlnkd,
@@ -554,7 +576,7 @@ module rings
             close(file)
         end
 
-        return rs, ngf, rings
+        return rs ./ sf, ngf, rings
     end
 
 end
