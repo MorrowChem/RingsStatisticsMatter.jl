@@ -29,7 +29,10 @@ module rings
     end
 
 
-    function dijkstra_nonwgt(nodsrc::Int64, lvlreq::Int64, lnks::Vector{Int64}, nodlnkd::Vector{Vector{Int64}})
+    function dijkstra_nonwgt(nodsrc::Int64,
+                             lvlreq::Int64,
+                             lnks::Vector{Int64},
+                             nodlnkd::Vector{Vector{Int64}})
         """
         Perform Dijkstra's algorithm for non-weighted graphs to calculate shortest distances.
 
@@ -42,7 +45,10 @@ module rings
         # Returns
         - `lvldist::Vector{Int64}`: Array of shortest distances from the source node.
         
-        This function performs Dijkstra's algorithm on a non-weighted graph to calculate the shortest distances from a specified source node to all other nodes. The algorithm considers the required level of distances (`lvlreq`) and returns an array of shortest distances.
+        This function performs Dijkstra's algorithm on a non-weighted graph
+        to calculate the shortest distances from a specified source node to all other nodes.
+        The algorithm considers the required level of distances (`lvlreq`) 
+        and returns an array of shortest distances.
         """
         # initialise
         lvldist = lvlreq + 2 .+ zeros(Int64, length(lnks))
@@ -74,9 +80,15 @@ module rings
     end
 
 
-    function strpth_record(nodcrt::Int64, lvlcrt::Int64, lvlprim::Int64, 
-                           pths::Int64, strpth, strpthx,
-                           lvldist, lnks::Vector{Int64}, nodlnkd::Vector{Vector{Int64}})
+    function strpth_record(nodcrt::Int64,
+                           lvlcrt::Int64,
+                           lvlprim::Int64, 
+                           pths::Int64,
+                           strpth::Matrix{Int64},
+                           strpthx::Vector{Int64},
+                           lvldist::Vector{Int64},
+                           lnks::Vector{Int64},
+                           nodlnkd::Vector{Vector{Int64}})
         """
         Record shortest paths recursively from a current node to a set of prime nodes.
 
@@ -557,10 +569,10 @@ module rings
 
         println("Ring statistics:")
         println("Ring Size | Count ")
-        println("----------|----------")
+        println("----------|------------------")
         
         for i in 1:length(rs)
-            printfmt("{:7d} | {:7.1f}\n", sf[i], (rs ./ sf)[i])
+            printfmt("{:7d} | {:15.1f}\n", sf[i], (rs ./ sf)[i])
             if rs[i] == 0 && rs[i+1] == 0 && rs[max(1, i-1)] == 0 && i > 6
                 break
             end
