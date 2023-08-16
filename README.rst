@@ -14,8 +14,12 @@ This package implements an algorithm based on the work described in:
 
 .. image:: images/100k_9rings.png
    :width: 400
-   :align: center
+   :align: left
    :alt: 100k model of a-Si with the 9-membered primitive rings highlighted in purple
+.. image:: images/ring_stats_1M.png
+   :width: 400
+   :align: center
+   :alt: Ring statistics for a 1M atom model of a-Si
 100k model of a-Si with the 9-membered primitive rings highlighted
 
 Features
@@ -23,6 +27,7 @@ Features
 
 - Python wrappers for easy plotting and incorporation into more complex analysis frameworks.
 - Returns node indices for each ring in your structure
+- Flexible multi-element support via ASE NeighborList (ignore or allow homopolar bonds, handle multiple custom cutoff-radii etc.)
 
 Dependencies
 ------------
