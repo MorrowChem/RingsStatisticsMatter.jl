@@ -11,6 +11,7 @@ This package implements an algorithm based on the work described in:
 | `"Efficient Algorithm for Primitive Ring Statistics in Topological Networks." <https://doi.org/10.1016/S0927-0256(01)00256-7>`_.
 | Computational Materials Science, vol. **24**, pp. 343-360, 2002.  
 |  
+
 .. image:: images/100k_9rings.png
    :width: 400
    :align: center
@@ -21,7 +22,7 @@ Features
 --------
 
 - Python wrappers for easy plotting and incorporation into more complex analysis frameworks.
-- Provides the node indices for each ring in your structure
+- Returns node indices for each ring in your structure
 
 Dependencies
 ------------
@@ -65,7 +66,7 @@ Installation
 Usage
 -----
 
-Run the provided Python script to analyze rings in molecular structures:
+Run the provided Python script to analyze rings:
 
 .. code-block:: bash
 
