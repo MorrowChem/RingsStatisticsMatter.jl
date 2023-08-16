@@ -16,7 +16,7 @@ This package implements an algorithm based on the work described in:
    :width: 400
    :align: center
    :alt: 100k model of a-Si with the 9-membered primitive rings highlighted in purple
-   100k model of a-Si with the 9-membered primitive rings highlighted
+100k model of a-Si with the 9-membered primitive rings highlighted
 
 Features
 --------
