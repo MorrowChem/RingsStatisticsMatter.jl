@@ -13,13 +13,15 @@ This package implements an algorithm based on the work described in:
 |  
 
 .. raw:: html
-   
+
    <p align="center">
    <img src="images/100k_9rings.jpg" width="200"/> <img height="150" hspace="20"/> <img src="images/ring_stats_1M.png" width="200"/> 
    </p>
+   <p align="center">
+   100k-atom model of a-Si with the 9-membered primitive rings highlighted
+   </p>
    
 
-100k model of a-Si with the 9-membered primitive rings highlighted
 
 
 Features
