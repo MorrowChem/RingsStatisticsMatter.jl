@@ -12,14 +12,26 @@ This package implements an algorithm based on the work described in:
 | Computational Materials Science, vol. **24**, pp. 343-360, 2002.  
 |  
 
-.. image:: images/100k_9rings.jpg
-   :width: 200
-   :align: left
-   :alt: 100k model of a-Si with the 9-membered primitive rings highlighted in purple
-.. image:: images/ring_stats_1M.png
-   :width: 200
-   :align: center
-   :alt: Ring statistics for a 1M atom model of a-Si
+.. raw:: html
+
+   <table>
+      <tr>
+         <td>
+            .. image:: images/100k_9rings.jpg
+               :width: 200
+               :align: left
+               :alt: 100k model of a-Si with the 9-membered primitive rings highlighted in purple
+         </td>
+         
+         <td>
+            .. image:: images/ring_stats_1M.png
+               :width: 200
+               :align: center
+               :alt: Ring statistics for a 1M atom model of a-Si
+         </td>
+      </tr>
+   </table>
+   
 
 100k model of a-Si with the 9-membered primitive rings highlighted
 
