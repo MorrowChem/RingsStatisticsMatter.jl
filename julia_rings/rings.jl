@@ -572,7 +572,7 @@ module rings
         println("----------|------------------")
         
         for i in 1:length(rs)
-            printfmt("{:7d} | {:15.1f}\n", sf[i], (rs ./ sf)[i])
+            printfmt("{:9d} | {:15.1f}\n", sf[i], (rs ./ sf)[i])
             if rs[i] == 0 && rs[i+1] == 0 && rs[max(1, i-1)] == 0 && i > 6
                 break
             end

@@ -16,4 +16,4 @@ np.savetxt('rings_stats.npy', rs)
 et = time.time()
 
 elapsed = et - st
-print(f"Elapsed time: {et:.2f} seconds")
+print(f"Elapsed time: {elapsed:.2f} seconds")
