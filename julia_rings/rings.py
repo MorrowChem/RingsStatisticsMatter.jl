@@ -91,8 +91,7 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85, maxlevel=12, 
     else:
         refnodes = np.array(refnodes)
 
-    results = Main.rings.ring_statistics(len(ats), neighs, refnodes,
-                                         maxlevel, **kwargs)
+    results = Main.rings.ring_statistics(len(ats), neighs, refnodes, **kwargs)
     rs, ngf, rings = results
 
     return rs, rings
