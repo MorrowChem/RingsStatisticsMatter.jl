@@ -326,6 +326,7 @@ module rings
     return goal_found
     end
 
+
     # Program itself - main function
     function ring_statistics_single(numatoms::Int64,
                                     nodlnkd::Vector{Vector{Int64}},
@@ -335,7 +336,8 @@ module rings
                                     mxpths::Int64=100,
                                     progress::Bool=true,
                                     nods=nothing,
-                                    parallel::Bool=false)
+                                    parallel::Bool=false,
+                                    verbosity::Int64=0)
         """
         Same as below, except
         - `nods=nothing`: Indices of atoms to be considered by a thread. If not provided, defaults to all atoms. 
@@ -351,10 +353,9 @@ module rings
         # list for ring node indices
         rings = [Vector{Vector{Int64}}() for i in range(1,2*maxlvl)]
 
-        if progress && Threads.threadid()==1
-            print("Progress: ")
+        if verbosity>0 && progress && Threads.threadid() == 1
+             println("Progress: ")
         end
-        
 
         for (ct, nodsrc) in enumerate(nods)
             if progress && Threads.threadid()==1
@@ -368,9 +369,17 @@ module rings
 
             # dist
             lvldist = dijkstra_nonwgt(nodsrc, maxlvl, lnks, nodlnkd)
+            
+            if verbosity>0 && progress && Threads.threadid() == 1
+                println("Past lvldist $nodsrc")
+            end
+
 
             # find all the prime-mid-nodes
             primes = findall(x -> x<(maxlvl-maxlvl%2)/2 && x>=1, lvldist)
+            if progress && Threads.threadid()==1 && verbosity>0
+                println("Found primes")
+            end
             # check each prime-mid-node
             for prime in primes
                 
@@ -471,12 +480,14 @@ module rings
 
     function ring_statistics(numatoms::Int64,
                              nodlnkd::Vector{Vector{Int64}},
-                             refnodes::Vector{Int64},
+                             refnodes::Vector{Int64};
+
                              maxlvl::Int64=12,
                              mxpths::Int64=100,
                              progress::Bool=true,
                              rings_out::Bool=true,
-                             outfile::String="rings_out.json")
+                             outfile::String="rings_out.json",
+                             verbosity::Int64=0)
         """
         Compute ring statistics for a set of atoms.
         
@@ -504,7 +515,7 @@ module rings
         
         """
 
-        println("Running ring_statistics with $(Threads.nthreads()) threads")
+        println("Running ring_statistics with $(Threads.nthreads()) threads, verbosity level $verbosity")
 
         nods = collect(range(1,numatoms))
         lnks = Int64[length(nodlnkd[m]) for m in 1:numatoms] # no. bonds at each atom
@@ -512,8 +523,9 @@ module rings
         
         # referential distance maps using refnodes
         print("Calculating referential distance maps...")
+        num_threads = min(length(refnodes), Threads.nthreads())
         refnode_chunks = Iterators.partition([i for i in 1:length(refnodes)],
-                                      length(refnodes) ÷ Threads.nthreads())
+                                      length(refnodes) ÷ num_threads)
 
 
         refnode_tasks = map(refnode_chunks) do chunk
@@ -533,7 +545,8 @@ module rings
                                                   mxpths,
                                                   progress,
                                                   chunk,
-                                                  true)
+                                                  true,
+                                                  verbosity)
         end
 
         results = fetch.(tasks)
@@ -561,7 +574,7 @@ module rings
             end
         end
 
-        println("\nNumber of rings elimated during search (even, odd): $(ngf[1]), $(ngf[2]) ",
+        println("\nNumber of rings eliminated during search (even, odd): $(ngf[1]), $(ngf[2]) ",
             "$(round(
                 (ngf[1] + ngf[2])/( sum(rs)+ngf[1]+ngf[2] )*100,
                 sigdigits=4)
