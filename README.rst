@@ -73,11 +73,18 @@ Installation
 Usage
 -----
 
-Run the provided Python script to analyze rings:
+Run the provided Python script to analyze rings with 2 threads:
 
 .. code-block:: bash
 
    export JULIA_NUM_THREADS=2 && python run_rings.py structures/aSi_500atom_test.xyz
+
+or for multi-component systems such as phase-change material Ge-Sb-Te
+
+.. code-block:: bash
+
+   python examples/run_rings_GeSbTe.py --homopolar n structures/GST_5k_amorphous.xyz
+
 
 Supported Platforms
 -------------------
