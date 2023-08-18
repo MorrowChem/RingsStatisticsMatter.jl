@@ -79,7 +79,7 @@ Run the provided Python script to analyze rings with 2 threads:
 
    export JULIA_NUM_THREADS=2 && python run_rings.py structures/aSi_500atom_test.xyz
 
-or for multi-component systems such as phase-change material Ge-Sb-Te
+or for multi-component systems, such as phase-change material Ge-Sb-Te, ignoring homopolar bonds:
 
 .. code-block:: bash
 
