@@ -1,6 +1,6 @@
 import numpy as np
 from ase.io import read, write
-from ase.neighborlist import NeighborList, NewPrimitiveNeighborList
+from ase.neighborlist import NeighborList, NewPrimitiveNeighborList, neighbor_list
 import json
 from os.path import abspath, dirname, join
 import julia
@@ -15,16 +15,57 @@ import julia.Main as Main
 Main.include(join(abspath(dirname(__file__)), "rings.jl"))
 
 
-def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85):
+def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85, maxlevel=12, **kwargs):
+    """Python wrapper for calling Julia ring statistics function
+
+    Args:
+        ats ase.atoms.Atoms: Atoms object or ASE-readable filename representing a single structure
+        refnodes (str, optional or list): 'auto' or list of reference nodes for distance map. 
+                                          'auto' places a number of points scaling linearly with len(ats)
+                                          fairly evenly spaced on non-special positions
+        index (str, optional): index of structure if filename specified for ats. Default to last structure
+        cutoff(float or dict, optional):
+            Cutoff for neighbour search (ASE NeighborList). It can be (from ASE docs)
+            * A single float: This is a global cutoff for all elements.
+            * A dictionary: This specifies cutoff values for element
+              pairs. Specification accepts element numbers of symbols.
+              Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
+            * A list/array with a per atom value: This specifies the radius of
+              an atomic sphere for each atoms. If spheres overlap, atoms are
+              within each others neighborhood. See
+              :func:`~ase.neighborlist.natural_cutoffs`
+              for an example on how to get such a list.
+        maxlevel (Int, optional): Max search depth when finding rings. Rings of size <= 2*maxlevel will be found.
+                                  Exponentially more expensive with increasing maxlevel 
+    kwargs: addtional keyword arguments for fine-control of ring statistics. See Julia code for details
+        
+    Returns:
+        rs (np.ndarray): Array of ring sizes from 1-N
+        rings (list of NxM np.ndarray): Array of node indices for every ring found, separated into sublists by size
+    """
     
     if type(ats) == str:
         ats = read(ats, index=index)
 
-    nl = NeighborList(cutoffs=cutoff, self_interaction=False, bothways=True,
-                  primitive=NewPrimitiveNeighborList)
-    nl.update(ats)
-    # + 1 for Julia indexing
-    neighs = [nl.get_neighbors(i)[0]+1 for i in range(len(ats))]
+    if type(cutoff) in (float, np.ndarray, list):       
+        nl = NeighborList(cutoffs=cutoff, self_interaction=False, bothways=True,
+                      primitive=NewPrimitiveNeighborList)
+        nl.update(ats)
+        # + 1 for Julia indexing
+        neighs = [nl.get_neighbors(i)[0]+1 for i in range(len(ats))]
+        
+    elif type(cutoff) == dict:
+        nl = neighbor_list('ij', ats, cutoff)
+        neighs = [[] for i in range(len(ats))]
+        for ct in range(len(nl[0])):
+            # + 1 for Julia indexing
+            neighs[nl[0][ct]].append(nl[1][ct]+1)
+        neighs = [np.array(i, dtype=np.int64) for i in neighs]
+        
+    else:
+        raise NotImplementedError(f'Cutoff type {type(cutoff)} not supported.'
+                                  'Try a float, array of floats, or dict')
+        
 
     if refnodes == 'auto':
         # Define the number of points you want to place
@@ -50,7 +91,8 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85):
     else:
         refnodes = np.array(refnodes)
 
-    results = Main.rings.ring_statistics(len(ats), neighs, refnodes)
+    results = Main.rings.ring_statistics(len(ats), neighs, refnodes,
+                                         maxlevel, **kwargs)
     rs, ngf, rings = results
 
     return rs, rings

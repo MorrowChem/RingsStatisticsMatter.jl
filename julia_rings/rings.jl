@@ -568,7 +568,7 @@ module rings
                 )% of total")
 
         println("Ring statistics:")
-        println("Ring Size | Count ")
+        println("Ring Size |            Count ")
         println("----------|------------------")
         
         for i in 1:length(rs)
