@@ -8,6 +8,8 @@ setup(
     author_email='joe.morrow@queens.ox.ac.uk',
     license='BSD 2-clause',
     packages=['julia_rings'],
+    package_data={'': ['rings.jl']},
+    include_package_data=True,
     install_requires=[
                       'ase',
                       'numpy',
