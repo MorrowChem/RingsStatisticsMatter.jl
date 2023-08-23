@@ -10,8 +10,32 @@ module rings
     """
 
     using PyCall, JSON, Formatting
+    using SparseArrays
+    import SparseArrays.findnz
     export ring_statistics
 
+    struct NonZeroSparseVector{T}
+        data::SparseVector{T}
+        default_value::T
+    end
+
+    function NonZeroSparseVector(n, default_value, type=Int64)
+        data = spzeros(type, n)
+        return NonZeroSparseVector(data, default_value)
+    end
+
+    (Base.getindex(csv::NonZeroSparseVector, i) =
+        getindex(csv.data, i) == 0 ? 
+        csv.default_value : getindex(csv.data, i) .- 1)
+
+    (Base.setindex!(csv::NonZeroSparseVector, v, i) = 
+        setindex!(csv.data, v+1, i))
+
+
+    SparseArrays.findnz(csv::NonZeroSparseVector) = findnz(csv.data)
+    # Base.iszero(csv::NonZeroSparseVector{T}) where T = iszero(csv.data)
+
+    
     function read_nodlnkd(filename)
         """Helper for reading neighbourlist from a .csv file"""
         file = open(filename, "r")
@@ -43,7 +67,7 @@ module rings
         - `nodlnkd`: Array of arrays representing the linked nodes for each node.
         
         # Returns
-        - `lvldist::Vector{Int64}`: Array of shortest distances from the source node.
+        - `lvldist::NonZeroSparseVector{Int64}`: Array of shortest distances from the source node.
         
         This function performs Dijkstra's algorithm on a non-weighted graph
         to calculate the shortest distances from a specified source node to all other nodes.
@@ -51,8 +75,8 @@ module rings
         and returns an array of shortest distances.
         """
         # initialise
-        lvldist = lvlreq + 2 .+ zeros(Int64, length(lnks))
-        lvldist[nodsrc] = 0
+        lvldist = NonZeroSparseVector(length(lnks), lvlreq + 2) # sparse array with default value of `lvlreq + 2`
+        lvldist[nodsrc] = 0 # actually sets this to 1 in the raw array datastructure
         quebgn = 0
         quend = 1
         queue = Vector{Int64}(undef, length(lnks))
@@ -86,7 +110,7 @@ module rings
                            pths::Int64,
                            strpth::Matrix{Int64},
                            strpthx::Vector{Int64},
-                           lvldist::Vector{Int64},
+                           lvldist::NonZeroSparseVector,
                            lnks::Vector{Int64},
                            nodlnkd::Vector{Vector{Int64}})
         """
@@ -134,8 +158,8 @@ module rings
     function prime_ring(iodd::Int64, 
                         lvlprim::Int64, 
                         lnks::Vector{Int64}, 
-                        lvldist::Vector{Int64}, 
-                        lvlref::Vector{Vector{Int64}},
+                        lvldist::NonZeroSparseVector, 
+                        lvlref::Vector{NonZeroSparseVector},
                         ringstat::Vector{Float64}, 
                         nodlnkd::Vector{Vector{Int64}}, 
                         querng::Vector{Vector{Int64}}, 
@@ -260,8 +284,8 @@ module rings
                          nodgoal::Int64,
                          limit::Matrix{Int64},
                          goal_found::Bool,
-                         lvlref::Vector{Vector{Int64}},
-                         lvldist::Vector{Int64},
+                         lvlref::Vector{NonZeroSparseVector},
+                         lvldist::NonZeroSparseVector,
                          lnks::Vector{Int64},
                          nodlnkd::Vector{Vector{Int64}},
                          maxlvl::Int64)
@@ -282,7 +306,6 @@ module rings
             Returns:
             - `goal_found::Bool`
         """
-
         lr = length(lvlref)
         if nodcrt == nodgoal
             goal_found = true
@@ -330,7 +353,7 @@ module rings
     # Program itself - main function
     function ring_statistics_single(numatoms::Int64,
                                     nodlnkd::Vector{Vector{Int64}},
-                                    lvlref::Vector{Vector{Int64}},
+                                    lvlref::Vector{NonZeroSparseVector},
                                     lnks::Vector{Int64},
                                     maxlvl::Int64=12,
                                     mxpths::Int64=100,
@@ -361,6 +384,7 @@ module rings
             if progress && Threads.threadid()==1
                 if nodsrc % floor(length(nods)/20) == 0
                     print(" ..$(Int64(floor(ct/length(nods) * 100)))%")
+                    flush(stdout)
                     if nodsrc == numatoms-1
                         println()
                     end
@@ -376,25 +400,27 @@ module rings
 
 
             # find all the prime-mid-nodes
-            primes = findall(x -> x<(maxlvl-maxlvl%2)/2 && x>=1, lvldist)
+            nzinds, nzs  = findnz(lvldist)
+            primes = nzinds[nzs .<= (maxlvl-maxlvl%2)/2 .&& nzs .>= 1]
+            # this pair of lines does the equivalent of this with the custom sparse array struct
+            # primes = findall(x -> x<(maxlvl-maxlvl%2)/2 && x>=1, lvldist)
             if progress && Threads.threadid()==1 && verbosity>0
-                println("Found primes")
+                println("Found $(length(primes)) primes")
             end
             # check each prime-mid-node
             for prime in primes
-                
 
                 # even ring case here
                 if size(findall(
                     [lvldist[n] == lvldist[prime]-1 for n in nodlnkd[prime]]
                         ))[1] > 1
+                
 
                     # find shortest paths to source from this prime-mid-node
                     pths = 0
                     strpth = zeros(Int64, mxpths, Int64(ceil(maxlvl/2)))
                     strpthx = zeros(Int64, Int64(ceil(maxlvl/2)))
                     querng = Vector{Int64}[]
-                    
                     pths, strpth, strpthx = strpth_record(prime, lvldist[prime], lvldist[prime],
                                                           pths, strpth, strpthx, lvldist,
                                                           lnks, nodlnkd)
@@ -407,7 +433,7 @@ module rings
                             end
                         end
                     end
-
+                    
                     # check if is prime ring
                     ngf, rings, ringstat = prime_ring(0, lvldist[prime], lnks,
                                                       lvldist, lvlref, ringstat,
@@ -470,7 +496,7 @@ module rings
 
     function process_refnodes_chunk(chunk, refnodes::Vector{Int64}, maxlvl::Int64,
                                     lnks::Vector{Int64}, nodlnkd::Vector{Vector{Int64}})
-        lvlref_tmp = Vector{Int64}[]
+        lvlref_tmp = NonZeroSparseVector[]
         for i in chunk
             lvlref_i = dijkstra_nonwgt(refnodes[i], maxlvl, lnks, nodlnkd)
             push!(lvlref_tmp, lvlref_i)
@@ -516,7 +542,7 @@ module rings
         """
 
         println("Running ring_statistics with $(Threads.nthreads()) threads, verbosity level $verbosity")
-
+        
         nods = collect(range(1,numatoms))
         lnks = Int64[length(nodlnkd[m]) for m in 1:numatoms] # no. bonds at each atom
         
