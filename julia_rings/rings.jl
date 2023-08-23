@@ -14,27 +14,24 @@ module rings
     import SparseArrays.findnz
     export ring_statistics
 
-    struct NonZeroSparseVector{T}
-        data::SparseVector{T}
-        default_value::T
+    struct NonZeroSparseVector
+        data::SparseVector{Int64, Int64}
+        default_value::Int64
     end
 
-    function NonZeroSparseVector(n, default_value, type=Int64)
-        data = spzeros(type, n)
+    function NonZeroSparseVector(n, default_value)
+        data = spzeros(Int64, n)
         return NonZeroSparseVector(data, default_value)
     end
 
-    (Base.getindex(csv::NonZeroSparseVector, i) =
-        getindex(csv.data, i) == 0 ? 
-        csv.default_value : getindex(csv.data, i) .- 1)
+    (Base.getindex(csv::NonZeroSparseVector, i::Int) =
+        getindex(csv.data::SparseVector{Int64,Int64}, i::Int) == 0 ? 
+        csv.default_value::Int64 : getindex(csv.data::SparseVector{Int64,Int64}, i::Int) .- 1)
 
-    (Base.setindex!(csv::NonZeroSparseVector, v, i) = 
-        setindex!(csv.data, v+1, i))
-
+    (Base.setindex!(csv::NonZeroSparseVector, v::Int64, i::Int) = 
+        setindex!(csv.data::SparseVector{Int64,Int64}, v::Int64.+1, i::Int))
 
     SparseArrays.findnz(csv::NonZeroSparseVector) = findnz(csv.data)
-    # Base.iszero(csv::NonZeroSparseVector{T}) where T = iszero(csv.data)
-
     
     function read_nodlnkd(filename)
         """Helper for reading neighbourlist from a .csv file"""
