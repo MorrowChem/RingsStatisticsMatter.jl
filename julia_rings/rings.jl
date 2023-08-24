@@ -47,7 +47,8 @@ module rings
         
         This function performs Dijkstra's algorithm on a non-weighted graph
         to calculate the shortest distances from a specified source node to all other nodes.
-        The algorithm considers the required level of distances (`lvlreq`) 
+        
+        algorithm considers the required level of distances (`lvlreq`) 
         and returns an array of shortest distances.
         """
         # initialise
@@ -108,7 +109,10 @@ module rings
         - `strpth`: Updated array storing recorded paths.
         - `strpthx`: Updated auxiliary array for path recording.
 
-        This function recursively records the shortest paths from a given current node to a set of prime nodes. The prime nodes are determined by the `lvlprim` parameter. The recorded paths are stored in the `strpth` array, and an auxiliary array `strpthx` is used for path recording. The function returns the updated number of recorded paths and arrays.
+        This function recursively records the shortest paths from a given current node to a set of prime nodes. 
+             prime nodes are determined by the `lvlprim` parameter. 
+             recorded paths are stored in the `strpth` array, and an auxiliary array `strpthx` is used for path recording. 
+             function returns the updated number of recorded paths and arrays.
         """
         for lnkscrt in 1:lnks[nodcrt]
             nodprb = nodlnkd[nodcrt][lnkscrt]
@@ -116,9 +120,17 @@ module rings
 
             if lvlprb == 0
                 pths += 1
-                for lvl in 1:lvlprim
-                    strpth[pths, lvl] = strpthx[lvl]
+                try
+                    for lvl in 1:lvlprim
+                        strpth[pths, lvl] = strpthx[lvl]
+                    end
+                catch BoundsError
+                    throw(RuntimeError(
+                    "Paths from node $nodcrt to $nodprb"*
+                    "exceed $(size(strpth, 1))"*
+                    "Try increasing maxpths"))
                 end
+
 
             elseif lvlprb == lvlcrt - 1
                 strpthx[lvlprb] = nodprb
@@ -269,15 +281,18 @@ module rings
         Recursively search for shorter paths between nodes, accelerated by referential distance maps
             
             Arguments:
-            - `nodcrt::Int64`: The current node being examined.
-            - `nodgoal::Int64`: The target node to be found.
+            - `nodcrt::Int64`: 
+             current node being examined.
+            - `nodgoal::Int64`: 
+             target node to be found.
             - `limit`: A matrix of limits for level references and distances.
             - `goal_found::Bool`: A boolean indicating whether the goal node has been found with a shorter path
             - `lvlref`: Array of referential distance maps
             - `lvldist`: Distances of each node to current source node
             - `lnks`: Number of bonds at each node
             - `nodlnkd`: neighbour list
-            - `maxlvl`: The maximum Dijkstra-level
+            - `maxlvl`: 
+             maximum Dijkstra-level
             
             Returns:
             - `goal_found::Bool`
@@ -378,7 +393,7 @@ module rings
             # find all the prime-mid-nodes
             primes = findall(x -> x<(maxlvl-maxlvl%2)/2 && x>=1, lvldist)
             if progress && Threads.threadid()==1 && verbosity>0
-                println("Found primes")
+                println("Found $(length(primes)) primes, maxlvl=$(maxlvl)")
             end
             # check each prime-mid-node
             for prime in primes
