@@ -344,14 +344,14 @@ module rings
         """
         
         if (nods == nothing)
-            nods = collect(range(1,numatoms))
+            nods = collect(range(start=1, step=1, stop=numatoms))
         end
 
         # fixed array initialisations
         ringstat = zeros(Float64, 2*maxlvl) # array for the ring stats
         ngf = [0, 0] # counts rejections
         # list for ring node indices
-        rings = [Vector{Vector{Int64}}() for i in range(1,2*maxlvl)]
+        rings = [Vector{Vector{Int64}}() for i in range(start=1, step=1, stop=2*maxlvl)]
 
         if verbosity>0 && progress && Threads.threadid() == 1
              println("Progress: ")
@@ -517,7 +517,7 @@ module rings
 
         println("Running ring_statistics with $(Threads.nthreads()) threads, verbosity level $verbosity")
 
-        nods = collect(range(1,numatoms))
+        nods = collect(range(start=1, step=1, stop=numatoms))
         lnks = Int64[length(nodlnkd[m]) for m in 1:numatoms] # no. bonds at each atom
         
         
@@ -554,7 +554,7 @@ module rings
         ngfs = [i[2] for i in results]
         rings_s = [i[3] for i in results]
 
-        rings = [Vector{Vector{Int64}}() for i in range(1,2*maxlvl)]
+        rings = [Vector{Vector{Int64}}() for i in range(start=1, step=1, stop=2*maxlvl)]
         for r in rings_s
             for (ct, ring_list_size_ct) in enumerate(r)
                 append!(rings[ct], ring_list_size_ct)
@@ -563,7 +563,7 @@ module rings
 
         rs = sum(rs_s)
         ngf = sum(ngfs)
-        sf = [i for i in range(1,length(rs_s[1]))]
+        sf = [i for i in range(start=1, step=1, stop=length(rs_s[1]))]
 
         for element in rs ./ sf
             if element != floor(element)
