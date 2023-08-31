@@ -348,7 +348,7 @@ module rings
                                     lvlref::Vector{Vector{Int64}},
                                     lnks::Vector{Int64},
                                     maxlvl::Int64=12,
-                                    mxpths::Int64=100,
+                                    mxpths::Int64=1000,
                                     progress::Bool=true,
                                     nods=nothing,
                                     parallel::Bool=false,
@@ -498,7 +498,7 @@ module rings
                              refnodes::Vector{Int64};
 
                              maxlvl::Int64=12,
-                             mxpths::Int64=100,
+                             mxpths::Int64=1000,
                              progress::Bool=true,
                              rings_out::Bool=true,
                              outfile::String="rings_out.json",
@@ -511,7 +511,7 @@ module rings
         - `nodlnkd::Vector{Vector{Int64}}`: A list of vectors, where `nodlnkd[i]` contains the indices of atoms bonded to atom `i`.
         - `refnodes::Vector{Int64}`: Indices of reference atoms used for distance calculations.
         - `maxlvl::Int=12`: Maximum depth-level from source and reference nodes for Dijkstra
-        - `mxpths::Int64=100`: Maximum number of shortest paths explored for each source - 100 is plenty for 100k of amorphous Si
+        - `mxpths::Int64=1000`: Maximum number of shortest paths explored for each source - 100 is plenty for 100k of amorphous Si
         - `progress::Bool=true`: Whether to display progress information.
         - `parallel::Bool=false`: Whether to use parallel execution.
         
