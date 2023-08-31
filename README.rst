@@ -85,6 +85,15 @@ or for multi-component systems, such as phase-change material Ge-Sb-Te, ignoring
 
    python examples/run_rings_GeSbTe.py --homopolar n structures/GST_5k_amorphous.xyz
 
+Extra Arguments
+===============
+
+The following extra arguments can be used with the command line tool:
+
+- ``--maxlvl``: Specifies the maximum level of rings that can be found. Rings of up to ``2 * maxlvl`` can be discovered.
+
+- ``--mxpths``: If your structure has numerous neighbors and you're using a large ``maxlvl``, consider increasing this parameter. This adjustment can help mitigate errors like ``BoundsError: attempt to access 1000×6 Matrix{Int64} at index [1001, 1]``.
+
 
 Supported Platforms
 -------------------
