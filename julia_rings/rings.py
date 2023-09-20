@@ -48,7 +48,7 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85, maxlevel=12, 
         ats = read(ats, index=index)
 
     if type(cutoff) in (float, np.ndarray, list):       
-        nl = NeighborList(cutoffs=cutoff, self_interaction=False, bothways=True,
+        nl = NeighborList(cutoffs=cutoff, skin=0.0, self_interaction=False, bothways=True,
                       primitive=NewPrimitiveNeighborList)
         nl.update(ats)
         # + 1 for Julia indexing
