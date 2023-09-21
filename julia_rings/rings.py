@@ -46,6 +46,15 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85, maxlevel=12, 
     
     if type(ats) == str:
         ats = read(ats, index=index)
+    
+    rsf = None
+    if np.min(ats.cell.diagonal()) < maxlevel*cutoff:
+        rsf = int(np.floor(maxlevel*cutoff/np.min(ats.cell.diagonal())))
+        ats = ats * [rsf for i in range(3)]
+        print(f"WARNING: Cell too small for maxlevel. Scaling cell by {rsf} x {rsf} x {rsf}")
+        print(f"Now calculating for {len(ats)} atoms")
+        print("Ring lists will include nodes from supercells.")
+        kwargs['rsf'] = rsf**3 # for scaling rs back to original cell size
 
     if type(cutoff) in (float, np.ndarray, list):       
         nl = NeighborList(cutoffs=cutoff, skin=0.0, self_interaction=False, bothways=True,
@@ -93,5 +102,7 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85, maxlevel=12, 
 
     results = Main.rings.ring_statistics(len(ats), neighs, refnodes, **kwargs)
     rs, ngf, rings = results
+    if not rsf is None:
+        rs = rs/rsf**3 # undo supercell scaling
 
     return rs, rings
