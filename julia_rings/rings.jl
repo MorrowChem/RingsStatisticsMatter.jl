@@ -380,6 +380,7 @@ module rings
                         println()
                     end
                 end
+                flush(stdout)
             end
 
             # dist
