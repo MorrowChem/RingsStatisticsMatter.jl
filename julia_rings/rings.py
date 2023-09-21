@@ -15,7 +15,7 @@ import julia.Main as Main
 Main.include(join(abspath(dirname(__file__)), "rings.jl"))
 
 
-def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85, maxlevel=12, **kwargs):
+def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85, maxlevel=12, no_supercell=False, **kwargs):
     """Python wrapper for calling Julia ring statistics function
 
     Args:
@@ -48,7 +48,7 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85, maxlevel=12, 
         ats = read(ats, index=index)
     
     rsf = None
-    if np.min(ats.cell.diagonal()) < maxlevel*cutoff:
+    if np.min(ats.cell.diagonal()) < maxlevel*cutoff and not no_supercell:
         rsf = int(np.floor(maxlevel*cutoff/np.min(ats.cell.diagonal())))
         ats = ats * [rsf for i in range(3)]
         print(f"WARNING: Cell too small for maxlevel. Scaling cell by {rsf} x {rsf} x {rsf}")
