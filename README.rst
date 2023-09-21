@@ -70,6 +70,12 @@ Installation
 
       pip install ./
 
+3. Test (optional)
+   
+   .. code-block:: bash
+
+      python -m unittest
+
 Usage
 -----
 
