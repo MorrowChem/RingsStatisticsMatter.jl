@@ -7,7 +7,7 @@ import numpy as np
 parser = argparse.ArgumentParser(description="Ring Statistics Script")
 parser.add_argument("input_file", help="Input file in ASE-supported format")
 parser.add_argument("-v", "--verbosity", help="Verbosity level 0, 1", default=0)
-parser.add_argument("-o", "--output", help="Output file name", default="rings_stats.npy")
+parser.add_argument("-o", "--output", help="Output file name", default="rings_lists.json")
 parser.add_argument("--maxpths", help="Maximum number of paths to consider at each node", default=1000)
 parser.add_argument("--maxlvl", help="Rings of size up to 2*maxlvl can be found", default=12)
 args = parser.parse_args()

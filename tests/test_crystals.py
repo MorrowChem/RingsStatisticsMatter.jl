@@ -11,7 +11,10 @@ class TestCrystalsRings(unittest.TestCase):
         self.output = os.path.join(TEST_DIR, "tmp_rings_stats.npy")
     
     def tearDown(self):
-        os.remove(self.output)
+        try:
+            os.remove(self.output)
+        except FileNotFoundError:
+            pass
 
     def test_Si(self):
         ats = read(os.path.join(TEST_DIR, "../structures/POSCAR.mp-149_Si"))
