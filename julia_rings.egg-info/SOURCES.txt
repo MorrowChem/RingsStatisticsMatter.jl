@@ -1,0 +1,12 @@
+LICENSE
+README.rst
+setup.py
+julia_rings/rings.jl
+julia_rings/rings.py
+julia_rings/utilities.py
+julia_rings.egg-info/PKG-INFO
+julia_rings.egg-info/SOURCES.txt
+julia_rings.egg-info/dependency_links.txt
+julia_rings.egg-info/requires.txt
+julia_rings.egg-info/top_level.txt
+tests/test_crystals.py

@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: julia-rings
+Version: 0.1.0
+Summary: Ring counting in amorphous structure implemented in Julia
+Home-page: https://github.com/MorrowChem/julia_rings
+Author: Joe Morrow
+Author-email: joe.morrow@queens.ox.ac.uk
+License: BSD 2-clause
+Classifier: Development Status :: 2 - Beta
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: POSIX :: Linux :: OSX
+Classifier: Programming Language :: Python :: 3
+License-File: LICENSE
