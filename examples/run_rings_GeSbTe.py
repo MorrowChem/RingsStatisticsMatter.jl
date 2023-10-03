@@ -25,6 +25,8 @@ else:
 st = time.time()
 rs, rings = ring_statistics(ats, cutoff=cutoff)
 np.savetxt('rings_stats.npy', rs)
+rings_array = np.array(rings, dtype=object)
+np.save('rings.npy', rings_array)
 et = time.time()
 
 elapsed = et - st
