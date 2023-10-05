@@ -1,7 +1,6 @@
 import numpy as np
 from ase.io import read, write
-from ase.neighborlist import NeighborList, NewPrimitiveNeighborList, neighbor_list
-import json
+from ase.neighborlist import NeighborList, NewPrimitiveNeighborList, neighbor_list, natural_cutoffs
 from os.path import abspath, dirname, join
 import julia
 from julia_rings.utilities import halton_sequence, place_points_in_cube
@@ -15,14 +14,15 @@ import julia.Main as Main
 Main.include(join(abspath(dirname(__file__)), "rings.jl"))
 
 
-def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85, maxlevel=12, no_supercell=False, **kwargs):
+def ring_statistics(ats, refnodes='auto', index='-1', cutoff=None,
+                    maxlevel=12, no_supercell=False, verbosity=0, **kwargs):
     """Python wrapper for calling Julia ring statistics function
 
     Args:
         ats ase.atoms.Atoms: Atoms object or ASE-readable filename representing a single structure
         refnodes (str, optional or list): 'auto' or list of reference nodes for distance map. 
                                           'auto' places a number of points scaling linearly with len(ats)
-                                          fairly evenly spaced on non-special positions
+                                          fairly evenly-spaced on non-special positions
         index (str, optional): index of structure if filename specified for ats. Default to last structure
         cutoff(float or dict, optional):
             Cutoff for neighbour search (ASE NeighborList). It can be (from ASE docs)
@@ -44,12 +44,17 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=2.85, maxlevel=12, 
         rings (list of NxM np.ndarray): Array of node indices for every ring found, separated into sublists by size
     """
 
-    # check what type of cutoff was passed
-    cutoff_type = type(cutoff)
-    if cutoff_type == dict:
+    if cutoff is None:
+        cutoff = natural_cutoffs(ats)
+        
+    if type(cutoff) == dict:
         maxcutoff = max(cutoff.values())
-    elif cutoff_type in (float, np.ndarray, list):
+    elif type(cutoff) == float:
         maxcutoff = cutoff
+    elif type(cutoff) in (np.ndarray, list):
+        maxcutoff = max(cutoff)
+    else:
+        raise TypeError(f'Cutoff type {type(cutoff)} not supported.')
     
     if type(ats) == str:
         ats = read(ats, index=index)
