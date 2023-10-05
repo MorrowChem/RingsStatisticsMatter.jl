@@ -26,15 +26,14 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=None,
         index (str, optional): index of structure if filename specified for ats. Default to last structure
         cutoff(float or dict, optional):
             Cutoff for neighbour search (ASE NeighborList). It can be (from ASE docs)
-            * A single float: This is a global cutoff for all elements.
+            * A single float: This is a global bond cutoff for all elements.
             * A dictionary: This specifies cutoff values for element
-              pairs. Specification accepts element numbers of symbols.
+              pairs. Specification accepts element numbers or symbols.
               Example: {(1, 6): 1.1, (1, 1): 1.0, ('C', 'C'): 1.85}
             * A list/array with a per atom value: This specifies the radius of
               an atomic sphere for each atoms. If spheres overlap, atoms are
-              within each others neighborhood. See
-              :func:`~ase.neighborlist.natural_cutoffs`
-              for an example on how to get such a list.
+              within each others neighborhood, i.e. this should be about half the
+              value of the other cutoff methods above.
         maxlevel (Int, optional): Max search depth when finding rings. Rings of size <= 2*maxlevel will be found.
                                   Exponentially more expensive with increasing maxlevel 
     kwargs: addtional keyword arguments for fine-control of ring statistics. See Julia code for details
