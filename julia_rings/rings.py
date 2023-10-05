@@ -45,7 +45,8 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=None,
     """
 
     if cutoff is None:
-        cutoff = [i*2.5 for i in natural_cutoffs(ats)]
+        cutoff = [i*1.3 for i in natural_cutoffs(ats)]
+        print("Cutoffs auto-set to: ", np.unique(cutoff))
         
     if type(cutoff) == dict:
         maxcutoff = max(cutoff.values())
