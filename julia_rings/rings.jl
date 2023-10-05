@@ -541,7 +541,9 @@ module rings
         
         
         # referential distance maps using refnodes
-        print("Calculating referential distance maps...")
+        if verbosity>0
+            print("Calculating referential distance maps...")
+        end
         num_threads = min(length(refnodes), Threads.nthreads())
         refnode_chunks = Iterators.partition([i for i in 1:length(refnodes)],
                                       length(refnodes) ÷ num_threads)
@@ -552,7 +554,10 @@ module rings
         end
         refnode_results = fetch.(refnode_tasks)
         lvlref = vcat(refnode_results...)
-        print("done\nStarting ring statistics...\n")
+        if verbosity>0
+            println("done")
+        end
+        print("Starting ring statistics...\n")
     
         chunks = Iterators.partition(nods, length(nods) ÷ Threads.nthreads())
         tasks = map(chunks) do chunk
@@ -593,13 +598,15 @@ module rings
             end
         end
 
-        println("\nNumber of rings eliminated during search (even, odd): $(ngf[1]), $(ngf[2]) ",
+        if verbosity > 0
+            println("\nNumber of rings eliminated during search (even, odd): $(ngf[1]), $(ngf[2]) ",
             "$(round(
                 (ngf[1] + ngf[2])/( sum(rs)+ngf[1]+ngf[2] )*100,
                 sigdigits=4)
                 )% of total")
+        end
 
-        println("Ring statistics:")
+        println("\nRing statistics:")
         println("Ring Size |            Count ")
         println("----------|------------------")
         

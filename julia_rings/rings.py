@@ -45,7 +45,7 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=None,
     """
 
     if cutoff is None:
-        cutoff = natural_cutoffs(ats)
+        cutoff = [i*2.5 for i in natural_cutoffs(ats)]
         
     if type(cutoff) == dict:
         maxcutoff = max(cutoff.values())
@@ -102,12 +102,13 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=None,
 
         for v in points:
             diff = spos - v
-            ref = np.argmin(np.linalg.norm(diff, axis=1))
-            refnodes.append(ref+1) # Julia indexing
+            refnode = np.argmin(np.linalg.norm(diff, axis=1))
+            refnodes.append(refnode+1) # Julia indexing
         
-        refnodes.append(1) # just a convenience placeholder, not used
+        refnodes.append(1) # just a convenience padding element, not used
         refnodes = np.array(refnodes)
-        print('Refnodes chosen: ', refnodes[:-1])
+        if verbosity > 0:
+            print('Refnodes chosen: ', refnodes[:-1])
     
     else:
         refnodes = np.array(refnodes)
