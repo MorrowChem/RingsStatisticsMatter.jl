@@ -30,6 +30,7 @@ Features
 - Python wrappers for easy plotting and incorporation into more complex analysis frameworks.
 - Returns node indices for each ring in your structure
 - Flexible multi-element support via ASE NeighborList (ignore or allow homopolar bonds, handle multiple custom cutoff-radii etc.)
+- Shared-memory parallelism via Julia's native multithreading. Scales well up to 128 cores (and presumably beyond).
 
 Dependencies
 ------------

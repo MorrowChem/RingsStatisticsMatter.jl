@@ -61,12 +61,14 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=None,
     
     rsf = None
     if np.min(ats.cell.diagonal()) < maxlevel*maxcutoff and not no_supercell:
-        rsf = int(np.floor(maxlevel*maxcutoff/np.min(ats.cell.diagonal())))
+        rsf = int(np.ceil(maxlevel*maxcutoff/np.min(ats.cell.diagonal())))
         ats = ats * [rsf for i in range(3)]
         print(f"WARNING: Cell too small for maxlevel. Scaling cell by {rsf} x {rsf} x {rsf}")
         print(f"Now calculating for {len(ats)} atoms")
         print("Ring lists will include nodes from supercells.")
         kwargs['rsf'] = rsf**3 # for scaling rs back to original cell size
+        if type(cutoff) in (np.ndarray, list):
+            cutoff = np.hstack([cutoff for a in range(rsf**3)])
 
     if type(cutoff) in (float, np.ndarray, list):       
         nl = NeighborList(cutoffs=cutoff, skin=0.0, self_interaction=False, bothways=True,
