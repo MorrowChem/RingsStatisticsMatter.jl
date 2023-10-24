@@ -494,6 +494,10 @@ module rings
         return lvlref_tmp
     end
 
+    function are_permutations(list1, list2)
+        return Set(list1) == Set(list2)
+    end
+
     function ring_statistics(numatoms::Int64,
                              nodlnkd::Vector{Vector{Int64}},
                              refnodes::Vector{Int64};
@@ -581,7 +585,18 @@ module rings
         rings = [Vector{Vector{Int64}}() for i in range(start=1, step=1, stop=2*maxlvl)]
         for r in rings_s
             for (ct, ring_list_size_ct) in enumerate(r)
-                append!(rings[ct], ring_list_size_ct)
+                for (ct2, ring) in enumerate(ring_list_size_ct)
+                    is_unique = true
+                    for tmpr in rings[ct]
+                        if are_permutations(ring, tmpr)
+                            is_unique = false
+                            break
+                        end
+                    end
+                    if is_unique
+                        append!(rings[ct], [ring])
+                    end
+                end
             end
         end
 
