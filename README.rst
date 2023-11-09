@@ -20,7 +20,12 @@ This package implements an algorithm based on the work described in:
    <p align="center">
    100k-atom model of a-Si with the 9-membered primitive rings highlighted
    </p>
-   
+   <p align="center">
+   <img src="images/8k_567rings.png" width="400"/>
+   </p>
+   <p align="center">
+   8k-atom model of a-C with the 5-, 6-, and 7-membered primitive rings highlighted
+   </p>
 
 
 
