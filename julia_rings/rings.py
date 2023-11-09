@@ -90,6 +90,8 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=None,
                                   'Try a float, array of floats, or dict')
         
 
+    # choose reference nodes (i.e. atoms) 
+    # to form auxiliary distance maps for accelerating ring search
     if refnodes == 'auto':
         # Define the number of points you want to place
         vol = ats.get_volume()

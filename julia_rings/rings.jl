@@ -10,7 +10,10 @@ module rings
     """
 
     using PyCall, JSON, Formatting
-    export ring_statistics
+    include("utilities.jl")
+
+    export ring_statistics, place_points_in_cube, read_nodlnkd
+
 
     function read_nodlnkd(filename)
         """Helper for reading neighbourlist from a .csv file"""
@@ -499,22 +502,23 @@ module rings
     end
 
     function ring_statistics(numatoms::Int64,
-                             nodlnkd::Vector{Vector{Int64}},
-                             refnodes::Vector{Int64};
+                             nodlnkd::Vector{Vector{Int64}};
 
+                             refnodes::Union{Vector{Int64}, Nothing}=nothing,
                              maxlvl::Int64=12,
                              mxpths::Int64=1000,
                              progress::Bool=true,
                              outfile::String="rings_out.json",
                              verbosity::Int64=0,
-                             rsf::Int64=1)
+                             rsf::Int64=1,
+                             volume::Union{Float64, Nothing}=nothing)
         """
         Compute ring statistics for a set of atoms.
         
         # Arguments
         - `numatoms::Int`: Total number of atoms in the system.
         - `nodlnkd::Vector{Vector{Int64}}`: A list of vectors, where `nodlnkd[i]` contains the indices of atoms bonded to atom `i`.
-        - `refnodes::Vector{Int64}`: Indices of reference atoms used for distance calculations.
+        - `refnodes::Vector{Int64}`: Indices of reference atoms used for distance calculations. If nothing, use Julia implementation of Halton sequence to generate reference nodes.
         - `maxlvl::Int=12`: Maximum depth-level from source and reference nodes for Dijkstra
         - `mxpths::Int64=1000`: Maximum number of shortest paths explored for each source - 100 is plenty for 100k of amorphous Si
         - `progress::Bool=true`: Whether to display progress information.
@@ -522,6 +526,7 @@ module rings
         - `outfile::String="rings_out.json"`: Output file for ring node lists.
         - `verbosity::Int64=0`: Verbosity level for output.
         - `rsf::Int64=1`: Supercell size factor for normalisation. If too-small cell is supplied, make supercell and scale the output
+        - `volume::Union{Float64, nothing}=nothing`: Volume of the system. needed if  not specifying refnodes through python
         
         # Returns
         - `ringstat::Vector{Float64}`: Array for storing the ring statistics.
@@ -542,6 +547,10 @@ module rings
 
         nods = collect(range(start=1, step=1, stop=numatoms))
         lnks = Int64[length(nodlnkd[m]) for m in 1:numatoms] # no. bonds at each atom
+
+        if refnodes === nothing
+            refnodes = place_points_in_cube(numatoms, nodlnkd)
+        end
         
         
         # referential distance maps using refnodes
@@ -599,6 +608,7 @@ module rings
                 end
             end
         end
+        #TODO: if using supercells, map back node indices to originals
 
         rs = sum(rs_s)
         ngf = sum(ngfs)
