@@ -119,4 +119,8 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=None,
     results = Main.rings.ring_statistics(len(ats), neighs, refnodes, **kwargs)
     rs, ngf, rings = results
     
+    for i in range(len(rings)):
+        for j in range(len(rings[i])):
+            rings[i][j] = rings[i][j] - 1
+    
     return rs, rings

@@ -97,12 +97,19 @@ or for multi-component systems, such as phase-change material Ge-Sb-Te, ignoring
 
    python examples/run_rings_GeSbTe.py --homopolar n structures/GST_5k_amorphous.xyz
 
+Disclaimer
+==============
+If you see non-integer entries in the ring statistics, or the nodes don't seem right, this is most likely from using small unit cells.   
+
+We try to automatically create supercells to fix this, but there may be edge cases where this isn't enough. For large enough cells, this shouldn't be an issue.
+
+
 Extra Arguments
 ===============
 
 The following extra arguments can be used with the command line tool:
 
-- ``--maxlvl``: Specifies the maximum level of rings that can be found. Rings of up to ``2 * maxlvl`` can be discovered.
+- ``--maxlvl``: Specifies the maximum level of rings that can be found.
 
 - ``--mxpths``: If your structure has numerous neighbors and you're using a large ``maxlvl``, consider increasing this parameter. This adjustment can help mitigate errors like ``BoundsError: attempt to access 1000×6 Matrix{Int64} at index [1001, 1]``.
 

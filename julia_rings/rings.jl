@@ -601,7 +601,7 @@ module rings
                         end
                     end
                     if is_unique
-                        append!(rings[ct], [[(i-1) % original_length for i in ring]])
+                        append!(rings[ct], [[((i-1) % original_length) + 1 for i in ring]])
                     end
                 end
             end
@@ -651,7 +651,7 @@ module rings
             close(file)
         end
 
-        return rs ./ sf, ngf, rings
+        return rs ./ (sf * rsf), ngf, rings
     end
 
 end
