@@ -60,13 +60,14 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=None,
         ats = read(ats, index=index)
     
     rsf = None
-    if np.min(ats.cell.diagonal()) < maxlevel*maxcutoff and not no_supercell:
-        rsf = int(np.ceil(maxlevel*maxcutoff/np.min(ats.cell.diagonal())))
-        ats = ats * [rsf for i in range(3)]
-        print(f"WARNING: Cell too small for maxlevel. Scaling cell by {rsf} x {rsf} x {rsf}")
+    
+    a, b, c = np.linalg.norm(ats.cell, axis=0)
+    if np.min((a,b,c)) < 2*maxlevel*maxcutoff and not no_supercell:
+        rsf = [int(np.ceil(2*maxlevel*maxcutoff/i)) for i in (a,b,c)]
+        ats = ats * rsf
+        print(f"WARNING: Cell too small for maxlevel. Scaling cell by {rsf[0]} x {rsf[1]} x {rsf[2]}")
         print(f"Now calculating for {len(ats)} atoms")
-        print("Ring lists will include nodes from supercells.")
-        kwargs['rsf'] = rsf**3 # for scaling rs back to original cell size
+        kwargs['rsf'] = rsf[0]*rsf[1]*rsf[2] # for scaling rs back to original cell size
         if type(cutoff) in (np.ndarray, list):
             cutoff = np.hstack([cutoff for a in range(rsf**3)])
 
@@ -117,7 +118,5 @@ def ring_statistics(ats, refnodes='auto', index='-1', cutoff=None,
 
     results = Main.rings.ring_statistics(len(ats), neighs, refnodes, **kwargs)
     rs, ngf, rings = results
-    if not rsf is None:
-        rs = rs/rsf**3 # undo supercell scaling
-
+    
     return rs, rings

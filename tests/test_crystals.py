@@ -23,7 +23,7 @@ class TestCrystalsRings(unittest.TestCase):
         
     def test_SiO2(self):
         ats = read(os.path.join(TEST_DIR, "../structures/POSCAR-SiO2-a-quartz"))
-        rs, _ = ring_statistics(ats, cutoff=2.2, maxlvl=24, outfile=self.output)
+        rs, _ = ring_statistics(ats, cutoff=1.8, maxlvl=20, outfile=self.output)
         assert(sum(rs)==18. and rs[11]==3. and rs[15]==15.)
         
 if __name__ == '__main__':

@@ -495,7 +495,9 @@ module rings
     end
 
     function are_permutations(list1, list2)
-        return Set(list1) == Set(list2)
+        s1 = Set(list1)
+        s2 = Set(list2)
+        return s1 == s2 || length(list1) != length(s1) || length(list2) != length(s2)
     end
 
     function ring_statistics(numatoms::Int64,
@@ -576,25 +578,30 @@ module rings
                                                   true,
                                                   verbosity)
         end
-
+        
         results = fetch.(tasks)
+        println()
         rs_s = [i[1] for i in results]
         ngfs = [i[2] for i in results]
         rings_s = [i[3] for i in results]
 
         rings = [Vector{Vector{Int64}}() for i in range(start=1, step=1, stop=2*maxlvl)]
+        
+        original_length = Int(numatoms / rsf)
         for r in rings_s
             for (ct, ring_list_size_ct) in enumerate(r)
                 for (ct2, ring) in enumerate(ring_list_size_ct)
                     is_unique = true
                     for tmpr in rings[ct]
-                        if are_permutations(ring, tmpr)
+                        if are_permutations(
+                            [i % original_length for i in ring],
+                            [i % original_length for i in tmpr])
                             is_unique = false
                             break
                         end
                     end
                     if is_unique
-                        append!(rings[ct], [ring])
+                        append!(rings[ct], [[(i-1) % original_length for i in ring]])
                     end
                 end
             end
@@ -604,11 +611,11 @@ module rings
         ngf = sum(ngfs)
         sf = [i for i in range(start=1, step=1, stop=length(rs_s[1]))]
 
-        for element in rs ./ sf
+        for element in rs ./ (sf * rsf)
             if element != floor(element)
                 @warn "Non-integer found in ring stats. This means not
                 all rings or extraneous rings have been found. Please check
-                you have enough refnodes!" 
+                you have enough refnodes and a big enough supercell!" 
                 break
             end
         end
