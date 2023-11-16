@@ -259,7 +259,7 @@ module rings
                     [[nodsrc,],  
                     srtpth1[pth1, 1:Int64((rs-(2+iodd))/2)], 
                     primes, 
-                    srtpth2[pth2, 1:Int64((rs-(2+iodd))/2)]]))
+                    reverse(srtpth2[pth2, 1:Int64((rs-(2+iodd))/2)])]))
                 push!(rings[rs], r)
             end 
         @label next_ring
@@ -358,7 +358,7 @@ module rings
         - `nods=nothing`: Indices of atoms to be considered by a thread. If not provided, defaults to all atoms. 
         """
         
-        if (nods == nothing)
+        if isnothing(nods)
             nods = collect(range(start=1, step=1, stop=numatoms))
         end
 
@@ -495,9 +495,30 @@ module rings
     end
 
     function are_permutations(list1, list2)
-        s1 = Set(list1)
-        s2 = Set(list2)
-        return s1 == s2 || length(list1) != length(s1) || length(list2) != length(s2)
+        """Need to check whether lists are cyclic permutations of eachother (including reversals)"""
+        #elimate possibilities in increaising order of computational cost
+        if length(list1) != length(list2)
+            return false
+        end
+
+        if sum(list1) != sum(list2)
+            return false
+        end
+
+        if Set(list1) != Set(list2)
+            return false
+        end
+        
+        list2rev = reverse(list2)
+        # Check if list2 is a cyclic permutation of list1
+        for shift in 0:length(list1)-1
+            if list1 == circshift(list2, shift)
+                return true
+            elseif list1 == circshift(list2rev, shift)
+                return true
+            end
+        end
+    return false
     end
 
     function ring_statistics(numatoms::Int64,
@@ -591,17 +612,18 @@ module rings
         for r in rings_s
             for (ct, ring_list_size_ct) in enumerate(r)
                 for (ct2, ring) in enumerate(ring_list_size_ct)
+                    ring = (ring .- 1) .% original_length .+ 1
                     is_unique = true
                     for tmpr in rings[ct]
                         if are_permutations(
-                            [i % original_length for i in ring],
-                            [i % original_length for i in tmpr])
+                            ring,
+                            tmpr)
                             is_unique = false
                             break
                         end
                     end
                     if is_unique
-                        append!(rings[ct], [[((i-1) % original_length) + 1 for i in ring]])
+                        append!(rings[ct], [ring])
                     end
                 end
             end
