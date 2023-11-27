@@ -509,16 +509,43 @@ module rings
             return false
         end
         
-        list2rev = reverse(list2)
-        # Check if list2 is a cyclic permutation of list1
         for shift in 0:length(list1)-1
             if list1 == circshift(list2, shift)
                 return true
-            elseif list1 == circshift(list2rev, shift)
+            end
+        end
+
+        # save most expensive check for last
+        list2rev = reverse(list2)
+        for shift in 0:length(list1)-1
+        # Check if list2 is a cyclic permutation of list1
+            if list1 == circshift(list2rev, shift)
                 return true
             end
         end
+
     return false
+    end
+
+    function deduplicate(ring_list, original_length)
+        unique_rings = Vector{Int64}[]
+        # modular arithmetic to map supercell indices back to original cell
+        ring_list = [(i .- 1) .% original_length .+ 1 for i in ring_list]
+        for (ct, ring) in enumerate(ring_list)
+            is_unique = true
+            for tmpr in ring_list[ct+1:end]
+                if are_permutations(
+                    ring,
+                    tmpr)
+                    is_unique = false
+                    break
+                end
+            end
+            if is_unique
+                append!(unique_rings, [ring])
+            end
+        end
+    return unique_rings
     end
 
     function ring_statistics(numatoms::Int64,
@@ -530,7 +557,8 @@ module rings
                              progress::Bool=true,
                              outfile::String="rings_out.json",
                              verbosity::Int64=0,
-                             rsf::Int64=1)
+                             rsf::Int64=1,
+                             deduplicate_rings::Bool=true)
         """
         Compute ring statistics for a set of atoms.
         
@@ -545,6 +573,7 @@ module rings
         - `outfile::String="rings_out.json"`: Output file for ring node lists.
         - `verbosity::Int64=0`: Verbosity level for output.
         - `rsf::Int64=1`: Supercell size factor for normalisation. If too-small cell is supplied, make supercell and scale the output
+        - `deduplicate_rings::Bool=true`: Whether to deduplicate rings. If false, rings will be duplicated by the number of sources.
         
         # Returns
         - `ringstat::Vector{Float64}`: Array for storing the ring statistics.
@@ -604,29 +633,23 @@ module rings
         println()
         rs_s = [i[1] for i in results]
         ngfs = [i[2] for i in results]
-        rings_s = [i[3] for i in results]
-
-        rings = [Vector{Vector{Int64}}() for i in range(start=1, step=1, stop=2*maxlvl)]
-        
-        original_length = Int(numatoms / rsf)
-        for r in rings_s
-            for (ct, ring_list_size_ct) in enumerate(r)
-                for (ct2, ring) in enumerate(ring_list_size_ct)
-                    ring = (ring .- 1) .% original_length .+ 1
-                    is_unique = true
-                    for tmpr in rings[ct]
-                        if are_permutations(
-                            ring,
-                            tmpr)
-                            is_unique = false
-                            break
-                        end
-                    end
-                    if is_unique
-                        append!(rings[ct], [ring])
-                    end
-                end
+        rings_s = [i[3] for i in results] # collect ring nodes from each thread
+        rings_collected = [Vector{Vector{Int64}}() for i in range(start=1, step=1, stop=2*maxlvl)] # collect rings of each size, including dupes
+        for i in rings_s
+            for (ct, j) in enumerate(i)
+                rings_collected[ct] = vcat(rings_collected[ct], j) # collect rings from each thread
             end
+        end
+
+        original_length = Int(numatoms / rsf)
+        rings = [Vector{Vector{Int64}}() for i in range(start=1, step=1, stop=2*maxlvl)] # empty destination for deduplicated rings
+        if deduplicate_rings
+            println("Deduplicating rings...")
+            Threads.@threads for ct in 1:length(rings_collected)
+                rings[ct] = deduplicate(rings_collected[ct], original_length)
+            end
+        else
+            rings = rings_collected
         end
 
         rs = sum(rs_s)
