@@ -12,22 +12,21 @@ This package implements an algorithm based on the work described in:
 | Computational Materials Science, vol. **24**, pp. 343-360, 2002.  
 |  
 
-.. raw:: html
+.. image:: https://raw.githubusercontent.com/MorrowChem/RingsStatisticsMatter/main/images/100k_9rings.jpg
+   :width: 200
+   :alt: 9-membered primitive rings in a 100k-atom model of a-Si
 
-   <p align="center">
-   <img src="images/100k_9rings.jpg" width="200"/> <img height="150" hspace="20"/> <img src="images/ring_stats_1M.png" width="200"/> 
-   </p>
-   <p align="center">
-   100k-atom model of a-Si with the 9-membered primitive rings highlighted
-   </p>
-   <p align="center">
-   <img src="images/8k_567rings.png" width="400"/>
-   </p>
-   <p align="center">
-   8k-atom model of a-C with the 5-, 6-, and 7-membered primitive rings highlighted
-   </p>
+.. image:: https://raw.githubusercontent.com/MorrowChem/RingsStatisticsMatter/main/images/ring_stats_1M.png
+   :width: 200
+   :alt: Ring statistics of a 1M-atom model
 
+100k-atom model of a-Si with the 9-membered primitive rings highlighted
 
+.. image:: https://raw.githubusercontent.com/MorrowChem/RingsStatisticsMatter/main/images/8k_567rings.png
+   :width: 400
+   :alt: 5-, 6- and 7-membered primitive rings in an 8k-atom model of a-C
+
+8k-atom model of a-C with the 5-, 6-, and 7-membered primitive rings highlighted
 
 Features
 --------
