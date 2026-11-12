@@ -42,9 +42,9 @@ Installation
 
 .. code-block:: bash
 
-   pip install git+https://github.com/MorrowChem/RingsStatisticsMatter
+   pip install rings-statistics-matter
 
-This builds the Rust kernel, so it needs a `Rust toolchain <https://rustup.rs>`_.
+Wheels are built for Linux, macOS and Windows. Installing from source needs a `Rust toolchain <https://rustup.rs>`_.
 
 Backends
 --------
@@ -109,6 +109,12 @@ Supported Platforms
 -------------------
 
 This package has been tested on macOS and Linux.
+
+Releasing
+---------
+
+Bump ``version`` in ``pyproject.toml`` and ``Cargo.toml``, then push a ``v*`` tag. The Release workflow builds
+the wheels and publishes them to PyPI by trusted publishing.
 
 Contributing
 ------------
