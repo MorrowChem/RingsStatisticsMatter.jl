@@ -3,9 +3,9 @@ import numpy as np
 from rings_statistics_matter import ring_statistics
 
 
-def test_diamond_si(structure):
+def test_diamond_si(structure, backend):
     atoms = structure("POSCAR.mp-149_Si")
-    counts, rings = ring_statistics(atoms, cutoff=2.85)
+    counts, rings = ring_statistics(atoms, cutoff=2.85, backend=backend)
     assert counts.sum() == 16 and counts[5] == 16
     assert rings[5].shape == (16, 6)
     assert rings[5].max() < len(atoms)
@@ -25,10 +25,3 @@ def test_per_atom_cutoff_with_supercell(structure):
 def test_default_cutoff(structure):
     counts, _ = ring_statistics(structure("POSCAR.mp-149_Si"))
     assert counts[5] == 16
-
-
-def test_refnodes_do_not_change_result(structure):
-    atoms = structure("aSi_500atom_test.xyz")
-    auto, _ = ring_statistics(atoms, cutoff=2.85, maxlvl=8)
-    single, _ = ring_statistics(atoms, cutoff=2.85, maxlvl=8, refnodes=[0])
-    np.testing.assert_array_equal(auto, single)

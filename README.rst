@@ -34,8 +34,8 @@ Features
 
 - Python wrappers for easy plotting and incorporation into more complex analysis frameworks.
 - Returns node indices for each ring in your structure
-- Flexible multi-element support via ASE NeighborList (ignore or allow homopolar bonds, handle multiple custom cutoff-radii etc.)
-- Shared-memory parallelism via Julia's native multithreading. Scales well up to 128 cores (and presumably beyond).
+- Flexible multi-element support (ignore or allow homopolar bonds, per-atom radii or element-pair cutoffs). Neighbours from vesin.
+- Shared-memory parallelism in both backends (rayon in Rust, native threads in Julia).
 
 Installation
 ------------
@@ -44,8 +44,17 @@ Installation
 
    pip install git+https://github.com/MorrowChem/RingsStatisticsMatter
 
-Julia is installed on first use by `juliacall <https://juliapy.github.io/PythonCall.jl/stable/juliacall/>`_.
-The kernel needs no Julia packages.
+This builds the Rust kernel, so it needs a `Rust toolchain <https://rustup.rs>`_.
+
+Backends
+--------
+
+The same algorithm is implemented twice. Tests check that both return the same rings.
+
+- ``backend="rust"`` (default): ``src/kernel.rs``. No runtime dependencies. Threads via ``num_threads``.
+- ``backend="julia"``: ``rings_statistics_matter/rings.jl``. Install with the ``julia`` extra;
+  `juliacall <https://juliapy.github.io/PythonCall.jl/stable/juliacall/>`_ installs Julia on first use.
+  Threads via ``JULIA_NUM_THREADS``.
 
 Usage
 -----
@@ -62,11 +71,11 @@ Usage
 ``cutoff`` is a global bond length, per-atom radii, or a dict of element-pair bond lengths
 (a pair set to 0 never bonds). The default is 1.3 x the ASE natural radii.
 
-Command line, with 2 Julia threads:
+Command line:
 
 .. code-block:: bash
 
-   export JULIA_NUM_THREADS=2 && python run_rings.py -c 2.85 structures/aSi_500atom_test.xyz
+   python run_rings.py -c 2.85 structures/aSi_500atom_test.xyz
 
 Multi-component systems, such as phase-change Ge-Sb-Te without Ge-Ge bonds:
 
@@ -93,7 +102,7 @@ Extra Arguments
 
 - ``maxlvl``: search depth. Rings of up to ``maxlvl - 1`` nodes are found.
 
-- ``mxpths``: buffer for shortest paths between a source and one node. Raise it if the kernel reports more paths than ``mxpths``.
+- ``mxpths`` (Julia backend): buffer for shortest paths between a source and one node. Raise it if the kernel reports more paths than ``mxpths``.
 
 
 Supported Platforms
