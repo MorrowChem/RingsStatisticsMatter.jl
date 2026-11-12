@@ -6,7 +6,7 @@ setup(
     url='https://github.com/MorrowChem/julia_rings',
     author='Joe Morrow',
     author_email='joe.morrow@queens.ox.ac.uk',
-    license='BSD 2-clause',
+    license='MIT',
     packages=['julia_rings'],
     package_data={'': ['rings.jl']},
     include_package_data=True,
@@ -19,7 +19,7 @@ setup(
     classifiers=[
         'Development Status :: 2 - Beta',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: BSD License',  
+        'License :: OSI Approved :: MIT License',  
         'Operating System :: POSIX :: Linux :: OSX',        
         'Programming Language :: Python :: 3'
     ],
