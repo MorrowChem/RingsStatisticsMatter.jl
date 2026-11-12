@@ -70,6 +70,18 @@ Usage
 ``cutoff`` is a global bond length, per-atom radii, or a dict of element-pair bond lengths
 (a pair set to 0 never bonds). The default is 1.3 x the ASE natural radii.
 
+Graphs without coordinates, such as the net of a framework, go in as edges. For a periodic
+graph ``images`` holds the lattice offset of each edge's second node:
+
+.. code-block:: python
+
+   from rings_statistics_matter import ring_statistics_graph
+
+   # primitive cubic net: one node bonded to its images along each axis
+   counts, rings = ring_statistics_graph(
+       edges=[[0, 0], [0, 0], [0, 0]], images=[[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+   )
+
 Command line:
 
 .. code-block:: bash

@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "rings-statistics-matter"
-version = "0.2.0"
+version = "0.3.0"
 description = "Primitive ring statistics for large atomistic models"
 readme = "README.rst"
 license = "MIT"
