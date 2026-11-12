@@ -7,7 +7,7 @@ import numpy as np
 from ase import Atoms
 from ase.neighborlist import natural_cutoffs
 
-from rings_statistics_matter import julia_backend
+from rings_statistics_matter import _kernel, julia_backend
 from rings_statistics_matter.neighbours import Cutoff, max_pair_cutoff, neighbour_csr
 from rings_statistics_matter.refnodes import auto_refnodes
 
@@ -31,6 +31,8 @@ def ring_statistics(
     refnodes: Sequence[int] | Literal["auto"] = "auto",
     supercell: bool = True,
     deduplicate: bool = True,
+    backend: Literal["rust", "julia"] = "rust",
+    num_threads: int | None = None,
     mxpths: int = 1000,
 ) -> tuple[np.ndarray, list[np.ndarray]]:
     """Primitive ring statistics (Yuan & Cormack 2002).
@@ -44,7 +46,10 @@ def ring_statistics(
         supercell: Repeat cells narrower than 2 * maxlvl * cutoff, so a ring cannot meet
             its own image. Counts and node indices are mapped back to the input cell.
         deduplicate: Return each ring once. Otherwise once per node it contains.
-        mxpths: Buffer for shortest paths from one source to one node.
+        backend: Kernel implementation. "julia" needs the julia extra.
+        num_threads: Rust backend only, defaults to all cores. Julia threads are set by
+            JULIA_NUM_THREADS before first use.
+        mxpths: Julia backend only. Buffer for shortest paths from one source to one node.
 
     Returns:
         counts: counts[n - 1] is the number of n-membered rings in the input cell.
@@ -67,9 +72,22 @@ def ring_statistics(
     offsets, indices = neighbour_csr(atoms, cutoff)
     refnodes = auto_refnodes(atoms) if isinstance(refnodes, str) else np.asarray(refnodes, dtype=np.int64)
 
-    counts, rings = julia_backend.ring_statistics_csr(
-        offsets, indices, refnodes, replicas=replicas, maxlvl=maxlvl, deduplicate=deduplicate, mxpths=mxpths
-    )
+    if backend == "rust":
+        counts, rings = _kernel.ring_statistics_csr(
+            offsets,
+            indices,
+            refnodes,
+            replicas=replicas,
+            maxlvl=maxlvl,
+            deduplicate=deduplicate,
+            num_threads=num_threads,
+        )
+    elif backend == "julia":
+        counts, rings = julia_backend.ring_statistics_csr(
+            offsets, indices, refnodes, replicas=replicas, maxlvl=maxlvl, deduplicate=deduplicate, mxpths=mxpths
+        )
+    else:
+        raise ValueError(f"Unknown backend {backend!r}")
     if not np.allclose(counts, np.round(counts)):
         warnings.warn(
             "Non-integer ring counts: rings were missed or double counted. Use a larger cell or supercell=True.",

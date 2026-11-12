@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
 
 [project]
 name = "rings-statistics-matter"
@@ -11,8 +11,9 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Joe Morrow" }]
 requires-python = ">=3.10"
-dependencies = ["ase", "numpy", "scipy", "vesin", "juliacall"]
+dependencies = ["ase", "numpy", "scipy", "vesin"]
 classifiers = [
+  "Programming Language :: Rust",
   "Intended Audience :: Science/Research",
   "Programming Language :: Python :: 3",
   "Topic :: Scientific/Engineering :: Chemistry",
@@ -21,11 +22,15 @@ classifiers = [
 [project.urls]
 Repository = "https://github.com/MorrowChem/RingsStatisticsMatter"
 
-[dependency-groups]
-dev = ["pytest", "ruff"]
+[project.optional-dependencies]
+julia = ["juliacall"]
 
-[tool.hatch.build.targets.wheel]
-packages = ["rings_statistics_matter"]
+[dependency-groups]
+dev = ["pytest", "ruff", "juliacall"]
+
+[tool.maturin]
+module-name = "rings_statistics_matter._kernel"
+include = [{ path = "rings_statistics_matter/rings.jl", format = ["sdist", "wheel"] }]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

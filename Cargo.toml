@@ -1,0 +1,20 @@
+[package]
+name = "rings-statistics-matter"
+version = "0.2.0"
+edition = "2021"
+license = "MIT"
+publish = false
+exclude = ["images", "run_rings.ipynb", ".github"]
+
+[lib]
+name = "_kernel"
+crate-type = ["cdylib"]
+
+[dependencies]
+numpy = "0.25"
+pyo3 = { version = "0.25", features = ["extension-module", "abi3-py310"] }
+rayon = "1.10"
+
+[profile.release]
+lto = true
+codegen-units = 1
