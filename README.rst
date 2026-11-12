@@ -1,5 +1,5 @@
-Julia Rings
-===========
+RingsStatisticsMatter
+=====================
 
 This package provides a tool for finding primitive rings efficiently for large models of amorphous materials.
 
@@ -37,65 +37,49 @@ Features
 - Flexible multi-element support via ASE NeighborList (ignore or allow homopolar bonds, handle multiple custom cutoff-radii etc.)
 - Shared-memory parallelism via Julia's native multithreading. Scales well up to 128 cores (and presumably beyond).
 
-Dependencies
-------------
-
-Before using this package, ensure you have the required Julia packages installed. Python dependencies are handled by pip.    
-
-To install Julia, use your package manager (brew, apt etc.) or visit the downloads page: https://julialang.org/downloads/  
-
-**Open the Julia REPL:**
-
-.. code-block:: bash
-
-   julia
-
-**Install the packages:**
-
-.. code-block:: julia
-
-   using Pkg
-   Pkg.add("PyCall")
-   Pkg.add("JSON")
-   Pkg.add("Formatting")
-
-
 Installation
 ------------
 
-1. Clone the repository:
+.. code-block:: bash
 
-   .. code-block:: bash
+   pip install git+https://github.com/MorrowChem/RingsStatisticsMatter
 
-      git clone --recursive git@github.com:MorrowChem/julia_rings.git
-      cd julia_rings
-
-2. Install the package using pip:
-
-   .. code-block:: bash
-
-      pip install ./
-
-3. Test (optional)
-   
-   .. code-block:: bash
-
-      python -m unittest
+Julia is installed on first use by `juliacall <https://juliapy.github.io/PythonCall.jl/stable/juliacall/>`_.
+The kernel needs no Julia packages.
 
 Usage
 -----
 
-Run the provided Python script to analyze rings with 2 threads:
+.. code-block:: python
+
+   from ase.io import read
+   from rings_statistics_matter import ring_statistics
+
+   counts, rings = ring_statistics(read("structures/aSi_500atom_test.xyz"), cutoff=2.85)
+
+``counts[n - 1]`` is the number of n-membered rings, ``rings[n - 1]`` an ``(n_rings, n)`` array of atom indices.
+
+``cutoff`` is a global bond length, per-atom radii, or a dict of element-pair bond lengths
+(a pair set to 0 never bonds). The default is 1.3 x the ASE natural radii.
+
+Command line, with 2 Julia threads:
 
 .. code-block:: bash
 
-   export JULIA_NUM_THREADS=2 && python run_rings.py structures/aSi_500atom_test.xyz
+   export JULIA_NUM_THREADS=2 && python run_rings.py -c 2.85 structures/aSi_500atom_test.xyz
 
-or for multi-component systems, such as phase-change material Ge-Sb-Te, ignoring homopolar bonds:
+Multi-component systems, such as phase-change Ge-Sb-Te without Ge-Ge bonds:
 
 .. code-block:: bash
 
    python examples/run_rings_GeSbTe.py --homopolar n structures/GST_5k_amorphous.xyz
+
+Tests
+-----
+
+.. code-block:: bash
+
+   uv sync && uv run pytest
 
 Disclaimer
 ==============
@@ -107,11 +91,9 @@ We try to automatically create supercells to fix this, but there may be edge cas
 Extra Arguments
 ===============
 
-The following extra arguments can be used with the command line tool:
+- ``maxlvl``: search depth. Rings of up to ``maxlvl - 1`` nodes are found.
 
-- ``--maxlvl``: Specifies the maximum level of rings that can be found.
-
-- ``--mxpths``: If your structure has numerous neighbors and you're using a large ``maxlvl``, consider increasing this parameter. This adjustment can help mitigate errors like ``BoundsError: attempt to access 1000×6 Matrix{Int64} at index [1001, 1]``.
+- ``mxpths``: buffer for shortest paths between a source and one node. Raise it if the kernel reports more paths than ``mxpths``.
 
 
 Supported Platforms
@@ -124,7 +106,7 @@ Contributing
 
 Contributions are welcome! Feel free to open issues or pull requests on the GitHub repository:
 
-https://github.com/MorrowChem/julia_rings
+https://github.com/MorrowChem/RingsStatisticsMatter
 
 License
 -------

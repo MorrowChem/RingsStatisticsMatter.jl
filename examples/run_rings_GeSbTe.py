@@ -1,33 +1,24 @@
 import argparse
-from julia_rings.rings import ring_statistics
-from ase.io import read
+import json
 import time
-import numpy as np
 
-parser = argparse.ArgumentParser(description="Ring Statistics Script")
+import numpy as np
+from ase.io import read
+
+from rings_statistics_matter import ring_statistics
+
+parser = argparse.ArgumentParser(description="Ring statistics for Ge-Sb-Te with element-pair cutoffs")
 parser.add_argument("input_file", help="Input file in ASE-supported format")
-parser.add_argument("-hp", "--homopolar", help="Whether to include homopolar bonds",
-                    choices=['y', 'n'], default='y')
+parser.add_argument("-hp", "--homopolar", help="Whether to include Ge-Ge bonds", choices=["y", "n"], default="y")
 args = parser.parse_args()
 
-if args.homopolar == 'y':
-    homopolar = True
-else:
-    homopolar = False
+atoms = read(args.input_file, "-1")
+cutoff = {(32, 32): 3.0 if args.homopolar == "y" else 0.0, (32, 51): 3.4, (32, 52): 3.4, (51, 52): 3.0}
 
-ats = read(args.input_file, "-1")
+start = time.time()
+counts, rings = ring_statistics(atoms, cutoff=cutoff)
+print(f"Elapsed time: {time.time() - start:.2f} seconds")
 
-if homopolar:
-    cutoff = {(32, 32): 3.0, (32, 51): 3.4, (32, 52): 3.4, (51,52): 3.0}
-else:
-    cutoff = {(32, 32): 0.0, (32, 51): 3.4, (32, 52): 3.4, (51,52): 3.0}
-
-st = time.time()
-rs, rings = ring_statistics(ats, cutoff=cutoff)
-np.savetxt('rings_stats.npy', rs)
-rings_array = np.array(rings, dtype=object)
-np.save('rings.npy', rings_array)
-et = time.time()
-
-elapsed = et - st
-print(f"Elapsed time: {elapsed:.2f} seconds")
+np.savetxt("rings_stats.npy", counts)
+with open("rings_lists.json", "w") as f:
+    json.dump([r.tolist() for r in rings], f)
