@@ -9,8 +9,8 @@ module rings
     Computational Materials Science, vol. 24, pp. 343-360, 2002.
     """
 
-    using PyCall, JSON, Formatting
-    export ring_statistics
+    using Printf
+    export ring_statistics, ring_statistics_csr
 
     function read_nodlnkd(filename)
         """Helper for reading neighbourlist from a .csv file"""
@@ -120,15 +120,11 @@ module rings
 
             if lvlprb == 0
                 pths += 1
-                try
-                    for lvl in 1:lvlprim
-                        strpth[pths, lvl] = strpthx[lvl]
-                    end
-                catch BoundsError
-                    throw(RuntimeError(
-                    "Paths from node $nodcrt to $nodprb"*
-                    "exceed $(size(strpth, 1))"*
-                    "Try increasing maxpths"))
+                if pths > size(strpth, 1)
+                    error("More than $(size(strpth, 1)) shortest paths to one source. Increase mxpths.")
+                end
+                for lvl in 1:lvlprim
+                    strpth[pths, lvl] = strpthx[lvl]
                 end
 
 
@@ -373,8 +369,8 @@ module rings
         end
 
         for (ct, nodsrc) in enumerate(nods)
-            if progress && Threads.threadid()==1
-                if nodsrc % floor(length(nods)/20) == 0
+            if verbosity>0 && progress && Threads.threadid()==1
+                if nodsrc % max(1, floor(length(nods)/20)) == 0
                     print(" ..$(Int64(floor(ct/length(nods) * 100)))%")
                     if nodsrc == numatoms-1
                         println()
@@ -494,58 +490,21 @@ module rings
         return lvlref_tmp
     end
 
-    function are_permutations(list1, list2)
-        """Need to check whether lists are cyclic permutations of eachother (including reversals)"""
-        #elimate possibilities in increaising order of computational cost
-        if length(list1) != length(list2)
-            return false
-        end
-
-        if sum(list1) != sum(list2)
-            return false
-        end
-
-        if Set(list1) != Set(list2)
-            return false
-        end
-        
-        for shift in 0:length(list1)-1
-            if list1 == circshift(list2, shift)
-                return true
+    function canonical(ring)
+        """Lexicographically smallest rotation of the ring or its reverse"""
+        best = ring
+        for r in (ring, reverse(ring)), shift in 0:length(ring)-1
+            candidate = circshift(r, shift)
+            if candidate < best
+                best = candidate
             end
         end
-
-        # save most expensive check for last
-        list2rev = reverse(list2)
-        for shift in 0:length(list1)-1
-        # Check if list2 is a cyclic permutation of list1
-            if list1 == circshift(list2rev, shift)
-                return true
-            end
-        end
-
-    return false
+        return best
     end
 
     function deduplicate(ring_list, original_length)
-        unique_rings = Vector{Int64}[]
-        # modular arithmetic to map supercell indices back to original cell
-        ring_list = [(i .- 1) .% original_length .+ 1 for i in ring_list]
-        for (ct, ring) in enumerate(ring_list)
-            is_unique = true
-            for tmpr in ring_list[ct+1:end]
-                if are_permutations(
-                    ring,
-                    tmpr)
-                    is_unique = false
-                    break
-                end
-            end
-            if is_unique
-                append!(unique_rings, [ring])
-            end
-        end
-    return unique_rings
+        """Map supercell indices back to the original cell and drop rings equal up to rotation and reversal"""
+        return unique([canonical((ring .- 1) .% original_length .+ 1) for ring in ring_list])
     end
 
     function ring_statistics(numatoms::Int64,
@@ -555,7 +514,6 @@ module rings
                              maxlvl::Int64=12,
                              mxpths::Int64=1000,
                              progress::Bool=true,
-                             outfile::String="rings_out.json",
                              verbosity::Int64=0,
                              rsf::Int64=1,
                              deduplicate_rings::Bool=true)
@@ -570,7 +528,6 @@ module rings
         - `mxpths::Int64=1000`: Maximum number of shortest paths explored for each source - 100 is plenty for 100k of amorphous Si
         - `progress::Bool=true`: Whether to display progress information.
         - `parallel::Bool=false`: Whether to use parallel execution.
-        - `outfile::String="rings_out.json"`: Output file for ring node lists.
         - `verbosity::Int64=0`: Verbosity level for output.
         - `rsf::Int64=1`: Supercell size factor for normalisation. If too-small cell is supplied, make supercell and scale the output
         - `deduplicate_rings::Bool=true`: Whether to deduplicate rings. If false, rings will be duplicated by the number of sources.
@@ -590,7 +547,9 @@ module rings
         
         """
 
-        println("Running ring_statistics with $(Threads.nthreads()) threads, verbosity level $verbosity")
+        if verbosity>0
+            println("Running ring_statistics with $(Threads.nthreads()) threads, verbosity level $verbosity")
+        end
 
         nods = collect(range(start=1, step=1, stop=numatoms))
         lnks = Int64[length(nodlnkd[m]) for m in 1:numatoms] # no. bonds at each atom
@@ -602,7 +561,7 @@ module rings
         end
         num_threads = min(length(refnodes), Threads.nthreads())
         refnode_chunks = Iterators.partition([i for i in 1:length(refnodes)],
-                                      length(refnodes) ÷ num_threads)
+                                      cld(length(refnodes), num_threads))
 
 
         refnode_tasks = map(refnode_chunks) do chunk
@@ -613,9 +572,7 @@ module rings
         if verbosity>0
             println("done")
         end
-        print("Starting ring statistics...\n")
-    
-        chunks = Iterators.partition(nods, length(nods) ÷ Threads.nthreads())
+        chunks = Iterators.partition(nods, cld(length(nods), Threads.nthreads()))
         tasks = map(chunks) do chunk
             Threads.@spawn ring_statistics_single(numatoms,
                                                   nodlnkd,
@@ -630,7 +587,6 @@ module rings
         end
         
         results = fetch.(tasks)
-        println()
         rs_s = [i[1] for i in results]
         ngfs = [i[2] for i in results]
         rings_s = [i[3] for i in results] # collect ring nodes from each thread
@@ -644,7 +600,6 @@ module rings
         original_length = Int(numatoms / rsf)
         rings = [Vector{Vector{Int64}}() for i in range(start=1, step=1, stop=2*maxlvl)] # empty destination for deduplicated rings
         if deduplicate_rings
-            println("Deduplicating rings...")
             Threads.@threads for ct in 1:length(rings_collected)
                 rings[ct] = deduplicate(rings_collected[ct], original_length)
             end
@@ -673,30 +628,35 @@ module rings
                 )% of total")
         end
 
-        println("\nRing statistics:")
-        println("Ring Size |            Count ")
-        println("----------|------------------")
-        
-        for i in eachindex(rs)
-            printfmt("{:9d} | {:15.1f}\n", sf[i], ((rs ./ sf) ./ rsf)[i])
-            if i == length(rs)
-                break
-            elseif rs[i] == 0 && rs[i+1] == 0 && rs[max(1, i-1)] == 0 && i > 6 && sum(rs[i+1:end]) == 0
-                break
+        if verbosity > 0
+            println("\nRing statistics:")
+            println("Ring Size |            Count ")
+            println("----------|------------------")
+            for i in eachindex(rs)
+                @printf("%9d | %15.1f\n", sf[i], rs[i] / (sf[i] * rsf))
             end
-                
-        end
-
-        json_data = JSON.json(rings)
-        file = open(outfile, "w")
-
-        try
-            write(file, json_data)
-        finally
-            close(file)
         end
 
         return rs ./ (sf * rsf), ngf, rings
+    end
+
+    function ring_statistics_csr(offsets, indices, refnodes; kwargs...)
+        """
+        `ring_statistics` for a 0-based CSR neighbour list and 0-based reference nodes.
+
+        Rings come back as one 0-based (n_rings, size) matrix per ring size.
+        """
+        offsets = convert(Vector{Int64}, offsets)
+        indices = convert(Vector{Int64}, indices)
+        numatoms = length(offsets) - 1
+        nodlnkd = [indices[offsets[i]+1:offsets[i+1]] .+ 1 for i in 1:numatoms]
+        # the last reference map is never read by prime_ring, so pad with one
+        refnodes = [convert(Vector{Int64}, refnodes) .+ 1; 1]
+
+        rs, ngf, rings = ring_statistics(numatoms, nodlnkd, refnodes; kwargs...)
+        matrices = [isempty(r) ? zeros(Int64, 0, n) : permutedims(reduce(hcat, r)) .- 1
+                    for (n, r) in enumerate(rings)]
+        return rs, ngf, matrices
     end
 
 end
