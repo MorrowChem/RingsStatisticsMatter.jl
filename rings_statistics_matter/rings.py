@@ -39,8 +39,9 @@ def ring_statistics(
 
     Args:
         atoms: Structure.
-        cutoff: Bond cutoff, see `neighbour_csr`. Defaults to 1.3 x the ASE natural radii.
-        maxlvl: Search depth. Rings of up to maxlvl - 1 nodes are found. Cost grows
+        cutoff: Bond cutoff, see `neighbour_csr`. Defaults to 1.3 x the ASE natural radii,
+            which bond metal-metal pairs in oxides; pass element-pair cutoffs there.
+        maxlvl: Search depth. Rings of up to 2 * (maxlvl // 2) - 1 nodes are found. Cost grows
             exponentially with it.
         refnodes: Atom indices for the referential distance maps, or "auto".
         supercell: Repeat cells narrower than 2 * maxlvl * cutoff, so a ring cannot meet
