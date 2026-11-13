@@ -111,7 +111,7 @@ We try to automatically create supercells to fix this, but there may be edge cas
 Extra Arguments
 ===============
 
-- ``maxlvl``: search depth. Rings of up to ``maxlvl - 1`` nodes are found.
+- ``maxlvl``: search depth. Rings of up to ``2 * (maxlvl // 2) - 1`` nodes are found.
 
 - ``mxpths`` (Julia backend): buffer for shortest paths between a source and one node. Raise it if the kernel reports more paths than ``mxpths``.
 

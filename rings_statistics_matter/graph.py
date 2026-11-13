@@ -31,7 +31,7 @@ def ring_statistics_graph(
         n_nodes: Number of nodes, defaults to the largest index + 1.
         images: (n_edges, 3) lattice offsets for a periodic graph: edge k joins edges[k, 0] in
             the home cell to edges[k, 1] in cell images[k]. None for a finite graph.
-        maxlvl: Search depth. Rings of up to maxlvl - 1 nodes are found.
+        maxlvl: Search depth. Rings of up to 2 * (maxlvl // 2) - 1 nodes are found.
         deduplicate: Return each ring once. Otherwise once per node it contains.
         num_threads: Defaults to all cores.
 
